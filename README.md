@@ -89,10 +89,6 @@ A robust, all-in-one Chrome Extension designed for QA engineers and developers. 
 - **Visibility Control**: Toggle note markers on/off to keep the view clean.
 - **Management**: View, browse, and delete notes from the extension sidebar.
 
-### 10. 🎨 Modern & Compact UI
-- **Monochrome Design**: A clean, professional black-and-white interface.
-- **Optimized Layout**: Compact footprint with sticky headers and collapsible focus views.
-- **Author Credits**: "Ruturaj Sharbidre" in the footer.
 
 ## 🛠 Installation
 
