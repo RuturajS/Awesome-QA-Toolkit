@@ -35,22 +35,61 @@ A robust, all-in-one Chrome Extension designed for QA engineers and developers. 
 - Resilient error handling for interruptions.
 
 ### 4. 📏 Measurement Tool
-- **Hover Mode**: Inspect any element on the page
-  - Shows width, height, position in pixels
-  - Displays padding, margin, and CSS properties
-  - Green outline highlights the element
+- **Hover Mode**: Inspect any element on the page.
+  - Shows width, height, position in pixels.
+  - Displays padding, margin, and CSS properties.
+  - Green outline highlights the element.
 - **Measure Mode** (Press `M` key):
-  - Click and drag to measure distances between any two points
-  - Shows total distance, horizontal/vertical components
-  - Displays angle of measurement
-  - Visual line with start/end point markers
+  - Click and drag to measure distances between any two points.
+  - Shows total distance, horizontal/vertical components.
+  - Displays angle of measurement.
+  - Visual line with start/end point markers.
 - **Keyboard Shortcuts**:
-  - `M` - Toggle between Hover and Measure modes
-  - `C` - Clear current measurement
-  - `ESC` - Exit measurement tool
-- Perfect for verifying layouts, spacing, and alignment
+  - `M` - Toggle between Hover and Measure modes.
+  - `C` - Clear current measurement.
+  - `ESC` - Exit measurement tool.
+- Perfect for verifying layouts, spacing, and alignment.
 
-### 4. 🎨 Modern & Compact UI
+### 5. ⏰ URL Scheduler
+- **Automated Browsing**: Schedule URLs to open automatically at a specific date/time or after a set delay.
+- **Modes**:
+  - **Single Mode**: Schedule one URL with a precise timer.
+  - **Bulk Mode**: Paste a list of URLs to open them all simultaneously at the scheduled time.
+- **Use Cases**: Setup test environments before work starts, coordinate release checks.
+
+### 6. 🔗 URL Extractor
+- **Asset Audit**: Detailed extraction of all links and assets on the current page.
+- **Smart Filters**:
+  - **Internal/External**: Separate local links from third-party ones.
+  - **Assets**: Isolate Images, Scripts (JS), and Stylesheets (CSS).
+- **Export Grid**: Download extracted lists as JSON, CSV, TXT, or Copy to Clipboard.
+
+### 7. 📸 Auto Screenshot
+- **Time-Lapse Capture**: Automate screenshot taking over time.
+- **Modes**:
+  - **Interval**: Take a screenshot every X seconds for Y iterations.
+  - **Specific Time**: Schedule a single shot for a future moment.
+- **Organization**: Automatically saves files to a custom subfolder in your Downloads.
+- **Use Cases**: Monitoring long-running background processes or UI changes.
+
+### 8. 🔍 Keyword Spotter
+- **Content Verification**: Find specific text or patterns on the page.
+- **Regex Support**: Use power-user Regular Expressions (e.g., `\d{5}`) or simple text.
+- **Modes**:
+  - **Find Once**: Highlight all current matches instantly.
+  - **Watch Mode**: Continuously monitor the page and log when new matches appear (great for dynamic SPAs).
+- **Match Logging**: Detailed logs of when and where keywords were found, exportable to JSON.
+
+### 9. 📌 Note Tagger
+- **On-Page Annotations**: Leave persistent sticky notes directly on web elements.
+- **Workflow**:
+  1. Toggle "Start Tagging".
+  2. Right-click any element.
+  3. Type your note.
+- **Visibility Control**: Toggle note markers on/off to keep the view clean.
+- **Management**: View, browse, and delete notes from the extension sidebar.
+
+### 10. 🎨 Modern & Compact UI
 - **Monochrome Design**: A clean, professional black-and-white interface.
 - **Optimized Layout**: Compact footprint with sticky headers and collapsible focus views.
 - **Author Credits**: "Ruturaj Sharbidre" in the footer.
