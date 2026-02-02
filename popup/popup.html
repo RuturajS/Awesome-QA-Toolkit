@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QA Tool Kit</title>
+    <link rel="stylesheet" href="popup.css">
+</head>
+
+<body>
+    <div class="container" id="mainView">
+        <h1>QA Tool Kit</h1>
+        <div class="controls">
+            <button id="scanBtn">Scan Page</button>
+            <input type="text" id="searchInput" placeholder="Filter results..." class="hidden">
+        </div>
+
+        <div class="tools-section">
+            <button id="screenshotBtn" class="tool-btn" title="Capture Screenshot"><span>📸</span> Screen</button>
+            <button id="recordBtn" class="tool-btn" title="Start Screen Recording"><span>🎥</span> Record</button>
+            <button id="measureBtn" class="tool-btn" title="Measure Elements & Distances"><span>📏</span>
+                Measure</button>
+            <button id="schedulerBtn" class="tool-btn" title="Schedule URLs to Open"><span>⏰</span> Scheduler</button>
+            <button id="extractUrlsBtn" class="tool-btn" title="Extract All URLs"><span>🔗</span> Extract URLs</button>
+            <button id="autoScreenshotBtn" class="tool-btn" title="Automated Screenshots"><span>📸</span> Auto
+                Shot</button>
+            <button id="keywordSpotterBtn" class="tool-btn" title="Find & Highlight Content"><span>🔍</span> Keyword
+                Spotter</button>
+            <button id="noteTaggerBtn" class="tool-btn" title="Tag Elements with Notes"><span>📌</span> Note
+                Tagger</button>
+        </div>
+
+        <div class="settings-section">
+            <div class="setting-item">
+                <input type="checkbox" id="screenshotTimestamp" checked>
+                <label for="screenshotTimestamp">Add timestamp to screenshots</label>
+            </div>
+            <div class="setting-item">
+                <input type="checkbox" id="annotateRecord" checked>
+                <label for="annotateRecord">Highlight cursor & clicks in recording</label>
+            </div>
+            <div class="setting-item">
+                <input type="checkbox" id="recordingTimestamp" checked>
+                <label for="recordingTimestamp">Add timestamp overlay to recording</label>
+            </div>
+        </div>
+
+        <div id="resultsContainer" class="hidden">
+            <div class="summary">
+                <span id="issueCount">0 issues found</span>
+            </div>
+
+            <div class="table-wrapper">
+                <table id="resultsTable">
+                    <thead>
+                        <tr>
+                            <th>Type</th>
+                            <th>Details</th>
+                            <th>Severity</th>
+                            <th>Recommendation</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Results will be injected here -->
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="export-actions">
+                <button id="exportJson" class="secondary">Export JSON</button>
+                <button id="exportCsv" class="secondary">Export CSV</button>
+                <button id="exportTxt" class="secondary">Export TXT</button>
+                <button id="exportXlsx" class="secondary">Export XLSX</button>
+            </div>
+        </div>
+
+        <div id="loading" class="hidden">Scanning...</div>
+        <div id="error" class="hidden error"></div>
+    </div>
+
+    <!-- Scheduler View -->
+    <div class="container hidden" id="schedulerView">
+        <div class="view-header">
+            <button class="back-btn" data-target="mainView">← Back</button>
+            <h2>⏰ URL Scheduler</h2>
+        </div>
+
+        <div class="mode-toggle">
+            <button id="singleMode" class="active">Single URL</button>
+            <button id="bulkMode">Bulk URLs</button>
+        </div>
+
+        <!-- Single URL Mode -->
+        <div id="singleForm">
+            <div class="input-group">
+                <label>URL</label>
+                <input type="text" id="singleUrl" placeholder="https://example.com">
+            </div>
+
+            <div class="input-group">
+                <label>Schedule Time</label>
+                <input type="datetime-local" id="singleDateTime">
+                <div class="info">Or set delay below</div>
+            </div>
+
+            <div class="time-inputs">
+                <div>
+                    <label>Min</label>
+                    <input type="number" id="singleMinutes" placeholder="Min" min="0">
+                </div>
+                <div>
+                    <label>Hr</label>
+                    <input type="number" id="singleHours" placeholder="Hr" min="0">
+                </div>
+                <div>
+                    <label>Day</label>
+                    <input type="number" id="singleDays" placeholder="Day" min="0">
+                </div>
+            </div>
+
+            <button id="addSingle" class="primary-btn">Add Schedule</button>
+        </div>
+
+        <!-- Bulk URL Mode -->
+        <div id="bulkForm" class="hidden">
+            <div class="input-group">
+                <label>URLs (one per line)</label>
+                <textarea id="bulkUrls" placeholder="https://example1.com&#10;https://example2.com"></textarea>
+            </div>
+
+            <div class="input-group">
+                <label>Schedule Time</label>
+                <input type="datetime-local" id="bulkDateTime">
+            </div>
+
+            <div class="time-inputs">
+                <div>
+                    <label>Min</label>
+                    <input type="number" id="bulkMinutes" placeholder="Min" min="0">
+                </div>
+                <div>
+                    <label>Hr</label>
+                    <input type="number" id="bulkHours" placeholder="Hr" min="0">
+                </div>
+                <div>
+                    <label>Day</label>
+                    <input type="number" id="bulkDays" placeholder="Day" min="0">
+                </div>
+            </div>
+
+            <button id="addBulk" class="primary-btn">Add All Schedules</button>
+        </div>
+
+        <div class="schedule-list">
+            <h3>Scheduled (<span id="scheduleCount">0</span>)</h3>
+            <div id="scheduleContainer"></div>
+        </div>
+    </div>
+
+    <!-- URL Extractor View -->
+    <div class="container hidden" id="extractorView">
+        <div class="view-header">
+            <button class="back-btn" data-target="mainView">← Back</button>
+            <h2>🔗 URL Extractor</h2>
+        </div>
+
+        <div class="page-info">
+            <div class="title" id="extractedPageTitle">Loading...</div>
+            <div class="url" id="extractedPageUrl"></div>
+        </div>
+
+        <div class="filter-section">
+            <button class="filter-btn active" data-filter="all">All</button>
+            <button class="filter-btn" data-filter="internal">Int</button>
+            <button class="filter-btn" data-filter="external">Ext</button>
+            <button class="filter-btn" data-filter="images">Img</button>
+            <button class="filter-btn" data-filter="scripts">JS</button>
+            <button class="filter-btn" data-filter="stylesheets">CSS</button>
+        </div>
+
+        <div class="stats">
+            <div>Total: <span id="totalCount">0</span> | Showing: <span id="showingCount">0</span></div>
+        </div>
+
+        <div class="url-list" id="extractedUrlList">
+            <div class="empty-state">No URLs found</div>
+        </div>
+
+        <div class="export-actions">
+            <button id="extractExportTxt" class="secondary">TXT</button>
+            <button id="extractExportJson" class="secondary">JSON</button>
+            <button id="extractExportCsv" class="secondary">CSV</button>
+            <button id="extractExportCopy" class="secondary">Copy</button>
+        </div>
+    </div>
+
+    <!-- Auto Screenshot View -->
+    <div class="container hidden" id="autoScreenshotView">
+        <div class="view-header">
+            <button class="back-btn" data-target="mainView">← Back</button>
+            <h2>📸 Auto Screenshot</h2>
+        </div>
+
+        <div class="input-group">
+            <label>Subfolder Name (Optional)</label>
+            <input type="text" id="autoShotFolder" placeholder="QA-Screenshots">
+            <div class="info">Screenshots will be saved to Downloads/[Folder]</div>
+        </div>
+
+        <div class="alert-box info-box">
+            <div class="alert-title">💡 Important Note</div>
+            <p>To avoid "Save As" prompts for every shot, disable <b>"Ask where to save each file before
+                    downloading"</b> in your <a href="#" id="openDownloadSettings">Chrome Settings</a>.</p>
+            <p><b>How to stop:</b> Click "Cancel" on an active task below to stop future captures.</p>
+        </div>
+
+        <div class="mode-toggle">
+            <button id="intervalMode" class="active">Interval</button>
+            <button id="specificMode">Specific Time</button>
+        </div>
+
+        <!-- Interval Mode -->
+        <div id="intervalForm">
+            <div class="time-inputs">
+                <div>
+                    <label>Every (Sec)</label>
+                    <input type="number" id="shotInterval" value="60" min="5">
+                </div>
+                <div>
+                    <label>Count</label>
+                    <input type="number" id="shotCount" value="10" min="1">
+                </div>
+            </div>
+            <button id="startAutoShot" class="primary-btn">Start Interval Capture</button>
+        </div>
+
+        <!-- Specific Time Mode -->
+        <div id="specificForm" class="hidden">
+            <div class="input-group">
+                <label>Target Time</label>
+                <input type="datetime-local" id="specificShotTime">
+            </div>
+            <button id="addSpecificShot" class="primary-btn">Schedule Screenshot</button>
+        </div>
+
+        <div class="schedule-list">
+            <h3>Active Tasks (<span id="autoShotCount">0</span>)</h3>
+            <div id="autoShotContainer"></div>
+        </div>
+    </div>
+
+    <!-- Keyword Spotter View -->
+    <div class="container hidden" id="keywordSpotterView">
+        <div class="view-header">
+            <button class="back-btn" data-target="mainView">← Back</button>
+            <h2>🔍 Keyword Spotter</h2>
+        </div>
+
+        <div class="input-group">
+            <label>Keyword / RegEx</label>
+            <input type="text" id="keywordInput" placeholder="e.g. basket ball or \d{5}">
+        </div>
+
+        <div class="setting-item" style="margin-bottom: 10px;">
+            <input type="checkbox" id="useRegex">
+            <label for="useRegex">Use Regular Expression (RegEx)</label>
+        </div>
+
+        <div class="mode-toggle">
+            <button id="findMode" class="active">Find Once</button>
+            <button id="watchMode">Watch & Notify</button>
+        </div>
+
+        <div id="findOnceControls">
+            <button id="findKeywordBtn" class="primary-btn">Find & Highlight</button>
+        </div>
+
+        <div id="watchControls" class="hidden">
+            <button id="startWatchKeywordBtn" class="primary-btn">Start Watching Keyword</button>
+        </div>
+
+        <div class="alert-box info-box" style="margin-top: 12px;">
+            <div class="alert-title">💡 Feature Info</div>
+            <p id="featureInfoText"><b>Find Once:</b> Search the current page staticly and highlight matches in yellow.
+            </p>
+        </div>
+
+        <div id="trackedKeywordsSection" class="schedule-list hidden">
+            <h3>Tracked Keywords (<span id="trackedCount">0</span>)</h3>
+            <div id="trackedContainer" class="url-list" style="max-height: 120px; margin-bottom: 12px;"></div>
+        </div>
+
+        <div class="schedule-list">
+            <h3>Live Match Logs (<span id="matchLogCount">0</span>)</h3>
+            <div id="matchLogContainer" class="url-list" style="max-height: 180px;">
+                <div class="empty-state">No matches found yet</div>
+            </div>
+            <div class="export-actions" style="margin-top: 8px;">
+                <button id="clearMatchLogs" class="secondary">Clear Logs</button>
+                <button id="exportMatchLogs" class="secondary">Export JSON</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Note Tagger View -->
+    <div class="container hidden" id="noteTaggerView">
+        <div class="view-header">
+            <button class="back-btn" data-target="mainView">← Back</button>
+            <h2>📌 Note Tagger</h2>
+        </div>
+
+        <button id="toggleTaggingBtn" class="primary-btn">Start Tagging Mode</button>
+
+        <div class="setting-item" style="margin-top: 10px;">
+            <input type="checkbox" id="toggleNotesVisibility" checked>
+            <label for="toggleNotesVisibility">Show Market Tags on Page</label>
+        </div>
+
+        <div class="alert-box info-box" style="margin-top: 12px;">
+            <div class="alert-title">💡 How to tag</div>
+            <p>1. Click <b>"Start Tagging Mode"</b>.</p>
+            <p>2. Hover over any element and <b>Right Click</b> it.</p>
+            <p>3. Enter your note and message. It will stay pinned there!</p>
+        </div>
+
+        <div class="schedule-list">
+            <h3>Page Notes (<span id="pageNoteCount">0</span>)</h3>
+            <div id="pageNotesContainer" class="url-list" style="max-height: 200px;">
+                <div class="empty-state">No notes on this page</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer">
+        Author : <a href="https://linkedin.com/in/ruturajsharbidre" target="_blank" rel="noopener noreferrer">Ruturaj
+            Sharbidre</a>
+    </div>
+    <script src="exporter.js"></script>
+    <script src="popup.js"></script>
+</body>
+
+</html>

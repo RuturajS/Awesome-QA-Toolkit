@@ -1,0 +1,74 @@
+{
+  "manifest_version": 3,
+  "name": "QA Tool Kit",
+  "version": "1.0",
+  "description": "One-click QA page scanning for broken links, images, and performance issues.",
+  "author": "Ruturaj Sharbidre",
+  "permissions": [
+    "activeTab",
+    "scripting",
+    "storage",
+    "alarms",
+    "downloads",
+    "notifications"
+  ],
+  "host_permissions": [
+    "<all_urls>"
+  ],
+  "action": {
+    "default_popup": "popup/popup.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "commands": {
+    "take_screenshot": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+Y",
+        "mac": "Command+Shift+Y"
+      },
+      "description": "Capture Screenshot"
+    }
+  },
+  "background": {
+    "service_worker": "scripts/background.js"
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "<all_urls>"
+      ],
+      "js": [
+        "scripts/keyword_spotter.js",
+        "scripts/note_tagger.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "pages/recorder_helper.html",
+        "scripts/recorder.js",
+        "scripts/screenshot.js",
+        "scripts/scanner.js",
+        "scripts/measure.js",
+        "scripts/url_extractor.js",
+        "scripts/recorder_inline.js",
+        "scripts/content_overlay.js",
+        "scripts/keyword_spotter.js",
+        "scripts/note_tagger.js"
+      ],
+      "matches": [
+        "<all_urls>"
+      ]
+    }
+  ]
+}

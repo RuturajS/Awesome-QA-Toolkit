@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>URL Extractor</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            width: 600px;
+            margin: 0;
+            padding: 16px;
+            background-color: #ffffff;
+            color: #000000;
+        }
+
+        h2 {
+            font-size: 16px;
+            margin: 0 0 8px 0;
+            font-weight: 600;
+        }
+
+        .page-info {
+            background: #f5f5f5;
+            padding: 10px;
+            border-radius: 3px;
+            margin-bottom: 12px;
+            font-size: 11px;
+        }
+
+        .page-info .title {
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .page-info .url {
+            color: #666;
+            word-break: break-all;
+        }
+
+        .filter-section {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+        }
+
+        .filter-btn {
+            padding: 6px 12px;
+            background: white;
+            color: #000;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .filter-btn.active {
+            background: #000;
+            color: white;
+            border-color: #000;
+        }
+
+        .filter-btn:hover {
+            background: #f5f5f5;
+        }
+
+        .filter-btn.active:hover {
+            background: #333;
+        }
+
+        .stats {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 12px;
+            font-size: 11px;
+            color: #666;
+        }
+
+        .stats span {
+            font-weight: 600;
+            color: #000;
+        }
+
+        .url-list {
+            border: 1px solid #ccc;
+            border-radius: 3px;
+            max-height: 300px;
+            overflow-y: auto;
+            margin-bottom: 12px;
+            background: #fafafa;
+        }
+
+        .url-item {
+            padding: 8px 10px;
+            border-bottom: 1px solid #eee;
+            font-size: 11px;
+            word-break: break-all;
+            font-family: monospace;
+        }
+
+        .url-item:last-child {
+            border-bottom: none;
+        }
+
+        .url-item:hover {
+            background: #f0f0f0;
+        }
+
+        .export-section {
+            border-top: 1px solid #eee;
+            padding-top: 12px;
+        }
+
+        .export-buttons {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+        }
+
+        button {
+            padding: 8px 12px;
+            background: #000;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 11px;
+        }
+
+        button:hover {
+            background: #333;
+        }
+
+        button.secondary {
+            background: white;
+            color: #000;
+            border: 1px solid #ccc;
+        }
+
+        button.secondary:hover {
+            background: #f5f5f5;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #888;
+            font-size: 12px;
+        }
+    </style>
+</head>
+
+<body>
+    <h2>🔗 URL Extractor</h2>
+
+    <div class="page-info">
+        <div class="title" id="pageTitle">Loading...</div>
+        <div class="url" id="pageUrl"></div>
+    </div>
+
+    <div class="filter-section">
+        <button class="filter-btn active" data-filter="all">All URLs</button>
+        <button class="filter-btn" data-filter="internal">Internal</button>
+        <button class="filter-btn" data-filter="external">External</button>
+        <button class="filter-btn" data-filter="images">Images</button>
+        <button class="filter-btn" data-filter="scripts">Scripts</button>
+        <button class="filter-btn" data-filter="stylesheets">CSS</button>
+        <button class="filter-btn" data-filter="media">Media</button>
+        <button class="filter-btn" data-filter="other">Other</button>
+    </div>
+
+    <div class="stats">
+        <div>Total: <span id="totalCount">0</span></div>
+        <div>Showing: <span id="showingCount">0</span></div>
+    </div>
+
+    <div class="url-list" id="urlList">
+        <div class="empty-state">No URLs found</div>
+    </div>
+
+    <div class="export-section">
+        <h2>Export Options</h2>
+        <div class="export-buttons">
+            <button id="exportTxt">📄 TXT</button>
+            <button id="exportJson">📋 JSON</button>
+            <button id="exportCsv">📊 CSV</button>
+            <button id="exportCopy">📋 Copy</button>
+        </div>
+    </div>
+
+    <script src="url_extractor_ui.js"></script>
+</body>
+
+</html>

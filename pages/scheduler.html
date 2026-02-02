@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scheduled URL Opener</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            width: 500px;
+            margin: 0;
+            padding: 16px;
+            background-color: #ffffff;
+            color: #000000;
+        }
+
+        h2 {
+            font-size: 16px;
+            margin: 0 0 12px 0;
+            font-weight: 600;
+        }
+
+        .input-group {
+            margin-bottom: 12px;
+        }
+
+        label {
+            display: block;
+            font-size: 11px;
+            font-weight: 600;
+            margin-bottom: 4px;
+            color: #333;
+        }
+
+        input[type="text"],
+        input[type="number"],
+        input[type="datetime-local"],
+        textarea {
+            width: 100%;
+            padding: 6px 8px;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+            font-size: 12px;
+            box-sizing: border-box;
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 60px;
+            font-family: monospace;
+        }
+
+        .time-inputs {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 8px;
+        }
+
+        button {
+            padding: 8px 16px;
+            background: #000;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 12px;
+            margin-right: 8px;
+        }
+
+        button:hover {
+            background: #333;
+        }
+
+        button.secondary {
+            background: white;
+            color: #000;
+            border: 1px solid #ccc;
+        }
+
+        button.secondary:hover {
+            background: #f5f5f5;
+        }
+
+        .schedule-list {
+            margin-top: 16px;
+            border-top: 1px solid #eee;
+            padding-top: 12px;
+        }
+
+        .schedule-item {
+            background: #f9f9f9;
+            padding: 10px;
+            margin-bottom: 8px;
+            border-radius: 3px;
+            border-left: 3px solid #000;
+            font-size: 11px;
+        }
+
+        .schedule-item .url {
+            font-weight: 600;
+            margin-bottom: 4px;
+            word-break: break-all;
+        }
+
+        .schedule-item .time {
+            color: #666;
+            font-size: 10px;
+        }
+
+        .schedule-item button {
+            padding: 4px 8px;
+            font-size: 10px;
+            margin-top: 6px;
+            background: #d32f2f;
+        }
+
+        .schedule-item button:hover {
+            background: #b71c1c;
+        }
+
+        .mode-toggle {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .mode-toggle button {
+            flex: 1;
+            background: white;
+            color: #000;
+            border: 1px solid #ccc;
+        }
+
+        .mode-toggle button.active {
+            background: #000;
+            color: white;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .info {
+            font-size: 10px;
+            color: #888;
+            margin-top: 4px;
+        }
+    </style>
+</head>
+
+<body>
+    <h2>⏰ Scheduled URL Opener</h2>
+
+    <div class="mode-toggle">
+        <button id="singleMode" class="active">Single URL</button>
+        <button id="bulkMode">Bulk URLs</button>
+    </div>
+
+    <!-- Single URL Mode -->
+    <div id="singleForm">
+        <div class="input-group">
+            <label>URL</label>
+            <input type="text" id="singleUrl" placeholder="https://example.com">
+        </div>
+
+        <div class="input-group">
+            <label>Schedule Time</label>
+            <input type="datetime-local" id="singleDateTime">
+            <div class="info">Or set delay in minutes/hours/days below</div>
+        </div>
+
+        <div class="input-group">
+            <label>Delay (Optional - overrides schedule time)</label>
+            <div class="time-inputs">
+                <div>
+                    <input type="number" id="singleMinutes" placeholder="Minutes" min="0">
+                </div>
+                <div>
+                    <input type="number" id="singleHours" placeholder="Hours" min="0">
+                </div>
+                <div>
+                    <input type="number" id="singleDays" placeholder="Days" min="0">
+                </div>
+            </div>
+        </div>
+
+        <button id="addSingle">Add Schedule</button>
+    </div>
+
+    <!-- Bulk URL Mode -->
+    <div id="bulkForm" class="hidden">
+        <div class="input-group">
+            <label>URLs (one per line)</label>
+            <textarea id="bulkUrls"
+                placeholder="https://example1.com&#10;https://example2.com&#10;https://example3.com"></textarea>
+        </div>
+
+        <div class="input-group">
+            <label>Schedule Time (for all URLs)</label>
+            <input type="datetime-local" id="bulkDateTime">
+            <div class="info">Or set delay below</div>
+        </div>
+
+        <div class="input-group">
+            <label>Delay (Optional)</label>
+            <div class="time-inputs">
+                <div>
+                    <input type="number" id="bulkMinutes" placeholder="Minutes" min="0">
+                </div>
+                <div>
+                    <input type="number" id="bulkHours" placeholder="Hours" min="0">
+                </div>
+                <div>
+                    <input type="number" id="bulkDays" placeholder="Days" min="0">
+                </div>
+            </div>
+        </div>
+
+        <button id="addBulk">Add All Schedules</button>
+    </div>
+
+    <div class="schedule-list">
+        <h2>Scheduled URLs (<span id="scheduleCount">0</span>)</h2>
+        <div id="scheduleContainer"></div>
+    </div>
+
+    <script src="scheduler.js"></script>
+</body>
+
+</html>
