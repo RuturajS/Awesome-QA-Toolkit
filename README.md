@@ -143,4 +143,4 @@ A robust, all-in-one Chrome Extension designed for QA engineers and developers. 
 
 ## 🐛 Issues & Feedback
 Found a bug or have a feature request?
-[**Create an Issue on GitHub**](https://github.com/ruturajs/QA-Tools-kit/issues)
+[**Create an Issue on GitHub**](https://github.com/RuturajS/Awesome-QA-Toolkit/issues)
