@@ -6,11 +6,16 @@
   "author": "Ruturaj Sharbidre",
   "permissions": [
     "activeTab",
+    "tabs",
+    "history",
     "scripting",
     "storage",
     "alarms",
     "downloads",
-    "notifications"
+    "notifications",
+    "desktopCapture",
+    "offscreen",
+    "cookies"
   ],
   "host_permissions": [
     "<all_urls>"
@@ -64,7 +69,10 @@
         "scripts/recorder_inline.js",
         "scripts/content_overlay.js",
         "scripts/keyword_spotter.js",
-        "scripts/note_tagger.js"
+        "scripts/note_tagger.js",
+        "scripts/form_filler.js",
+        "scripts/console_collector.js",
+        "scripts/whole_screen_screenshot.js"
       ],
       "matches": [
         "<all_urls>"

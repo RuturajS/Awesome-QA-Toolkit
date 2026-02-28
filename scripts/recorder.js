@@ -5,7 +5,6 @@
     let mediaRecorder;
     let recordedChunks = [];
     let stream;
-    let controlPanel;
     let effectCanvas, effectCtx;
     let animationId;
     let mouseTrail = [];
@@ -155,7 +154,6 @@
             };
 
             mediaRecorder.start();
-            showControlPanel();
 
         } catch (err) {
             console.error("Error starting recording:", err);
@@ -171,7 +169,6 @@
         if (stream) {
             stream.getTracks().forEach(track => track.stop());
         }
-        removeControlPanel();
         removeEffectOverlay();
         window.hasRecorderRun = false;
     }
@@ -191,33 +188,6 @@
         a.click();
         window.URL.revokeObjectURL(url);
         recordedChunks = [];
-    }
-
-    function showControlPanel() {
-        controlPanel = document.createElement('div');
-        controlPanel.style.position = 'fixed';
-        controlPanel.style.bottom = '20px';
-        controlPanel.style.left = '20px';
-        controlPanel.style.zIndex = '1000000';
-        controlPanel.style.background = '#d32f2f';
-        controlPanel.style.padding = '10px 20px';
-        controlPanel.style.borderRadius = '50px';
-        controlPanel.style.color = 'white';
-        controlPanel.style.cursor = 'pointer';
-        controlPanel.style.boxShadow = '0 4px 6px rgba(0,0,0,0.2)';
-        controlPanel.style.fontFamily = 'sans-serif';
-        controlPanel.style.fontWeight = 'bold';
-        controlPanel.innerText = '⏹ Stop Recording';
-
-        controlPanel.addEventListener('click', stopRecording);
-        document.body.appendChild(controlPanel);
-    }
-
-    function removeControlPanel() {
-        if (controlPanel) {
-            document.body.removeChild(controlPanel);
-            controlPanel = null;
-        }
     }
 
     startRecording();

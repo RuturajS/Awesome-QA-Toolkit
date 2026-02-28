@@ -5,9 +5,29 @@
     let mediaRecorder;
     let recordedChunks = [];
     let stream;
-    let controlPanel;
     const enableEffects = window.enableRecorderEffects !== false;
     const addTimestamp = window.recordingAddTimestamp !== false;
+
+    function showToast(msg, isError = false) {
+        let toast = document.getElementById('__qa_standard_toast__');
+        if (!toast) {
+            toast = document.createElement('div');
+            toast.id = '__qa_standard_toast__';
+            Object.assign(toast.style, {
+                position: 'fixed', bottom: '24px', right: '24px', zIndex: '2147483647',
+                background: '#1a1a2e', color: '#fff', padding: '10px 18px', borderRadius: '10px',
+                fontSize: '13px', fontFamily: 'system-ui, sans-serif',
+                boxShadow: '0 4px 24px rgba(0,0,0,0.5)', border: '1px solid #444',
+                transition: 'opacity 0.3s', opacity: '0', pointerEvents: 'none'
+            });
+            document.body.appendChild(toast);
+        }
+        toast.style.background = isError ? '#cc2222' : '#1a1a2e';
+        toast.textContent = msg;
+        toast.style.opacity = '1';
+        clearTimeout(toast.__timeout);
+        toast.__timeout = setTimeout(() => { toast.style.opacity = '0'; }, 3000);
+    }
 
     async function startRecording() {
         try {
@@ -41,8 +61,6 @@
             mediaRecorder.start(1000);
             console.log('Recording started');
 
-            showControlPanel();
-
             // Notify background script
             chrome.runtime.sendMessage({
                 action: 'recordingStarted',
@@ -53,7 +71,7 @@
 
         } catch (err) {
             console.error("Error starting recording:", err);
-            alert('Failed to start recording: ' + err.message);
+            showToast('❌ Failed to start recording: ' + err.message, true);
             window.hasRecorderRun = false;
         }
     }
@@ -65,7 +83,6 @@
         if (stream) {
             stream.getTracks().forEach(track => track.stop());
         }
-        removeControlPanel();
         window.hasRecorderRun = false;
 
         // Notify background script
@@ -79,7 +96,7 @@
 
         if (recordedChunks.length === 0) {
             console.error('No recorded data to save');
-            alert('No recording data available. Please try again.');
+            showToast('❌ No recording data available. Please try again.', true);
             return;
         }
 
@@ -104,96 +121,6 @@
             document.body.removeChild(a);
             recordedChunks = [];
         }, 500);
-    }
-
-    function showControlPanel() {
-        controlPanel = document.createElement('div');
-        controlPanel.style.cssText = `
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            z-index: 2147483647;
-            background: #000;
-            padding: 15px 20px;
-            border-radius: 8px;
-            color: white;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            transition: all 0.3s ease;
-        `;
-
-        const indicator = document.createElement('div');
-        indicator.style.cssText = `
-            width: 12px;
-            height: 12px;
-            background: #ff0000;
-            border-radius: 50%;
-            animation: pulse 1.5s infinite;
-        `;
-
-        const style = document.createElement('style');
-        style.textContent = `
-            @keyframes pulse {
-                0%, 100% { opacity: 1; }
-                50% { opacity: 0.3; }
-            }
-        `;
-        document.head.appendChild(style);
-
-        const status = document.createElement('span');
-        status.textContent = 'Recording... (Press ESC to stop)';
-        status.style.cssText = 'font-size: 14px; font-weight: 600; transition: opacity 0.3s ease;';
-
-        const stopBtn = document.createElement('button');
-        stopBtn.textContent = '⏹ Stop';
-        stopBtn.style.cssText = `
-            background: #d32f2f;
-            color: white;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-weight: bold;
-            font-size: 13px;
-        `;
-        stopBtn.onmouseover = () => stopBtn.style.background = '#b71c1c';
-        stopBtn.onmouseout = () => stopBtn.style.background = '#d32f2f';
-        stopBtn.addEventListener('click', stopRecording);
-
-        controlPanel.appendChild(indicator);
-        controlPanel.appendChild(status);
-        controlPanel.appendChild(stopBtn);
-        document.body.appendChild(controlPanel);
-
-        // Auto-hide status text after 3 seconds
-        setTimeout(() => {
-            status.style.opacity = '0';
-            setTimeout(() => {
-                status.style.display = 'none';
-                controlPanel.style.padding = '12px 15px';
-            }, 300);
-        }, 3000);
-
-        // Add keyboard listener for Escape key
-        document.addEventListener('keydown', handleKeyPress);
-    }
-
-    function handleKeyPress(e) {
-        if (e.key === 'Escape') {
-            e.preventDefault();
-            stopRecording();
-        }
-    }
-
-    function removeControlPanel() {
-        if (controlPanel && controlPanel.parentNode) {
-            controlPanel.parentNode.removeChild(controlPanel);
-            controlPanel = null;
-        }
-        document.removeEventListener('keydown', handleKeyPress);
     }
 
     startRecording();

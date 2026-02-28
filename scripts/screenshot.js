@@ -323,12 +323,34 @@
         });
     }
 
+    function showToast(msg, isError = false) {
+        let toast = document.getElementById('__qa_standard_toast__');
+        if (!toast) {
+            toast = document.createElement('div');
+            toast.id = '__qa_standard_toast__';
+            Object.assign(toast.style, {
+                position: 'fixed', bottom: '24px', right: '24px', zIndex: '2147483647',
+                background: '#1a1a2e', color: '#fff', padding: '10px 18px', borderRadius: '10px',
+                fontSize: '13px', fontFamily: 'system-ui, sans-serif',
+                boxShadow: '0 4px 24px rgba(0,0,0,0.5)', border: '1px solid #444',
+                transition: 'opacity 0.3s', opacity: '0', pointerEvents: 'none'
+            });
+            document.body.appendChild(toast);
+        }
+        toast.style.background = isError ? '#cc2222' : '#1a1a2e';
+        toast.style.color = '#fff';
+        toast.textContent = msg;
+        toast.style.opacity = '1';
+        clearTimeout(toast.__timeout);
+        toast.__timeout = setTimeout(() => { toast.style.opacity = '0'; }, 3000);
+    }
+
     async function copyToClipboard(blob) {
         try {
             await navigator.clipboard.write([new ClipboardItem({ [blob.type]: blob })]);
         } catch (err) {
             console.error(err);
-            alert("Clipboard permission needed or failed.");
+            showToast("❌ Clipboard permission needed or failed.", true);
         }
     }
 
@@ -344,14 +366,7 @@
     }
 
     function showNotification(msg) {
-        const div = document.createElement('div');
-        div.textContent = msg;
-        div.style.cssText = "position:fixed;bottom:20px;right:20px;padding:10px 20px;background:#333;color:white;border-radius:4px;z-index:9999999;";
-        document.body.appendChild(div);
-        setTimeout(() => {
-            div.style.opacity = '0';
-            setTimeout(() => { if (div.parentNode) div.parentNode.removeChild(div); }, 500);
-        }, 2000);
+        showToast("✅ " + msg);
     }
 
     createOverlay();

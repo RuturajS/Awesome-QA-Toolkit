@@ -1,4 +1,28 @@
 document.addEventListener('DOMContentLoaded', () => {
+
+    // ─── Global status bar (replaces all alerts) ─────────────────────────────────
+    let _statusTimer = null;
+    function showStatus(msg, isError = false) {
+        let bar = document.getElementById('__statusBar__');
+        if (!bar) {
+            bar = document.createElement('div');
+            bar.id = '__statusBar__';
+            Object.assign(bar.style, {
+                position: 'fixed', bottom: '0', left: '0', right: '0', zIndex: '99999',
+                padding: '7px 14px', fontSize: '12px', fontWeight: '600',
+                transition: 'opacity 0.3s', opacity: '0', textAlign: 'center',
+                pointerEvents: 'none', fontFamily: 'system-ui, sans-serif'
+            });
+            document.body.appendChild(bar);
+        }
+        bar.textContent = msg;
+        bar.style.background = isError ? '#cc2222' : '#16a34a';
+        bar.style.color = '#fff';
+        bar.style.opacity = '1';
+        clearTimeout(_statusTimer);
+        _statusTimer = setTimeout(() => { bar.style.opacity = '0'; }, 2800);
+    }
+
     const mainView = document.getElementById('mainView');
     const schedulerView = document.getElementById('schedulerView');
     const extractorView = document.getElementById('extractorView');
@@ -38,6 +62,10 @@ document.addEventListener('DOMContentLoaded', () => {
         autoScreenshotView.classList.add('hidden');
         keywordSpotterView.classList.add('hidden');
         document.getElementById('noteTaggerView').classList.add('hidden');
+        document.getElementById('cookieManagerView').classList.add('hidden');
+        document.getElementById('formFillerView').classList.add('hidden');
+        document.getElementById('consoleCollectorView').classList.add('hidden');
+        document.getElementById('bulkUrlOpenerView').classList.add('hidden');
 
         document.getElementById(viewId).classList.remove('hidden');
 
@@ -54,7 +82,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // --- Settings Persistence ---
-    const settingsKeys = ['screenshotTimestamp', 'annotateRecord', 'recordingTimestamp'];
+    const settingsKeys = ['screenshotTimestamp', 'annotateRecord', 'recordingTimestamp', 'captureWholeScreen'];
 
     chrome.storage.sync.get(settingsKeys, (result) => {
         settingsKeys.forEach(key => {
@@ -79,6 +107,8 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('screenshotBtn').addEventListener('click', async () => {
             const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
             const addTimestamp = document.getElementById('screenshotTimestamp').checked;
+            const fullScreen = document.getElementById('captureWholeScreen').checked;
+
             if (tab) {
                 chrome.scripting.executeScript({
                     target: { tabId: tab.id },
@@ -87,7 +117,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }, () => {
                     chrome.scripting.executeScript({
                         target: { tabId: tab.id },
-                        files: ['scripts/screenshot.js']
+                        files: [fullScreen ? 'scripts/whole_screen_screenshot.js' : 'scripts/screenshot.js']
                     });
                 });
                 window.close();
@@ -100,6 +130,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
             const enableEffects = document.getElementById('annotateRecord').checked;
             const addTimestamp = document.getElementById('recordingTimestamp').checked;
+
+            // Start the actual recording script on the active tab
             if (tab) {
                 chrome.scripting.executeScript({
                     target: { tabId: tab.id },
@@ -114,6 +146,15 @@ document.addEventListener('DOMContentLoaded', () => {
                         files: ['scripts/recorder_inline.js']
                     });
                 });
+
+                // Inform background script to globally mark recording as active
+                chrome.runtime.sendMessage({
+                    action: 'initGlobalRecording',
+                    tabId: tab.id,
+                    enableEffects: enableEffects,
+                    addTimestamp: addTimestamp
+                });
+
                 window.close();
             }
         });
@@ -163,6 +204,19 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('keywordSpotterBtn').addEventListener('click', () => {
             switchView('keywordSpotterView');
             loadMatchLogs();
+        });
+    }
+
+    if (document.getElementById('cookieManagerBtn')) {
+        document.getElementById('cookieManagerBtn').addEventListener('click', () => {
+            switchView('cookieManagerView');
+        });
+    }
+
+    if (document.getElementById('formFillerBtn')) {
+        document.getElementById('formFillerBtn').addEventListener('click', () => {
+            switchView('formFillerView');
+            ffLoadProfiles();
         });
     }
 
@@ -303,13 +357,13 @@ document.addEventListener('DOMContentLoaded', () => {
         const hrs = parseInt(document.getElementById('singleHours').value) || 0;
         const days = parseInt(document.getElementById('singleDays').value) || 0;
 
-        if (!url) return alert('Enter a URL or domain');
-        if (!isValidUrl(url)) return alert('Please enter a valid URL or domain (e.g., google.com or https://...)');
+        if (!url) { showStatus('Enter a URL or domain', true); return; }
+        if (!isValidUrl(url)) { showStatus('Please enter a valid URL or domain (e.g., google.com or https://...)', true); return; }
         url = formatUrl(url);
 
-        if (!dateTime && !mins && !hrs && !days) return alert('Set a Time or Delay');
+        if (!dateTime && !mins && !hrs && !days) { showStatus('Set a Time or Delay', true); return; }
         let schedTime = (mins || hrs || days) ? Date.now() + (mins * 60 + hrs * 3600 + days * 86400) * 1000 : new Date(dateTime).getTime();
-        if (schedTime <= Date.now()) return alert('Time must be in future');
+        if (schedTime <= Date.now()) { showStatus('Time must be in future', true); return; }
 
         createSchedule(url, schedTime);
         document.getElementById('singleUrl').value = '';
@@ -322,19 +376,19 @@ document.addEventListener('DOMContentLoaded', () => {
         const hrs = parseInt(document.getElementById('bulkHours').value) || 0;
         const days = parseInt(document.getElementById('bulkDays').value) || 0;
 
-        if (!rawUrls.length) return alert('Enter URLs (one per line)');
+        if (!rawUrls.length) { showStatus('Enter URLs (one per line)', true); return; }
 
         const validUrls = rawUrls.filter(u => isValidUrl(u)).map(u => formatUrl(u));
-        if (validUrls.length === 0) return alert('No valid URLs or domains found. Please check your list.');
+        if (validUrls.length === 0) { showStatus('No valid URLs or domains found. Please check your list.', true); return; }
 
-        if (!dateTime && !mins && !hrs && !days) return alert('Set a Time or Delay');
+        if (!dateTime && !mins && !hrs && !days) { showStatus('Set a Time or Delay', true); return; }
         let schedTime = (mins || hrs || days) ? Date.now() + (mins * 60 + hrs * 3600 + days * 86400) * 1000 : new Date(dateTime).getTime();
 
         validUrls.forEach(u => createSchedule(u, schedTime));
         document.getElementById('bulkUrls').value = '';
 
         if (validUrls.length < rawUrls.length) {
-            alert(`Added ${validUrls.length} schedules. ${rawUrls.length - validUrls.length} entries were skipped due to invalid format.`);
+            showStatus(`Added ${validUrls.length} schedules. ${rawUrls.length - validUrls.length} entries were skipped due to invalid format.`);
         }
     });
 
@@ -490,15 +544,33 @@ document.addEventListener('DOMContentLoaded', () => {
         const interval = parseInt(document.getElementById('shotInterval').value);
         const count = parseInt(document.getElementById('shotCount').value);
         const folder = document.getElementById('autoShotFolder').value.trim() || 'QA-Screenshots';
+        const isFullScreen = document.getElementById('fullScreenCapture').checked;
 
-        if (isNaN(interval) || interval < 5) return alert('Interval must be at least 5 seconds');
-        if (isNaN(count) || count < 1) return alert('Count must be at least 1');
-
-        const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-        if (!tab) return alert('No active tab found');
+        if (isNaN(interval) || interval < 5) { showStatus('Interval must be at least 5 seconds', true); return; }
+        if (isNaN(count) || count < 1) { showStatus('Count must be at least 1', true); return; }
 
         // Feature: Reminder for "Ask where to save" setting
         if (!confirm('Note: Ensure "Ask where to save each file before downloading" is OFF in Chrome settings for silent capture. Continue?')) return;
+
+        if (isFullScreen) {
+            chrome.desktopCapture.chooseDesktopMedia(['screen'], async (streamId) => {
+                if (!streamId) {
+                    showStatus('Permission to capture screen was denied.');
+                    return;
+                }
+                startAutoShotTask(interval, count, folder, true, streamId);
+            });
+        } else {
+            startAutoShotTask(interval, count, folder, false, null);
+        }
+    });
+
+    async function startAutoShotTask(interval, count, folder, isFullScreen, streamId) {
+        let tab = null;
+        if (!isFullScreen) {
+            [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+            if (!tab) { showStatus('No active tab found', true); return; }
+        }
 
         const taskId = 'autoShot_' + Date.now();
         const firstShotTime = Date.now() + 1000; // Start almost immediately
@@ -510,8 +582,10 @@ document.addEventListener('DOMContentLoaded', () => {
             totalCount: count,
             remainingCount: count,
             folder: folder,
-            tabId: tab.id,
-            tabUrl: tab.url,
+            tabId: tab ? tab.id : null,
+            tabUrl: tab ? tab.url : 'Full Desktop Screen',
+            isFullScreen: isFullScreen,
+            streamId: streamId,
             startTime: Date.now()
         };
 
@@ -521,19 +595,19 @@ document.addEventListener('DOMContentLoaded', () => {
         // Create the alarm for the first shot
         chrome.alarms.create(taskId, { when: firstShotTime });
         renderAutoTasks();
-        alert(`Started interval capture: ${count} shots, every ${interval}s`);
-    });
+        showStatus(`Started interval capture: ${count} shots, every ${interval}s`);
+    }
 
     document.getElementById('addSpecificShot').addEventListener('click', async () => {
         const timeInput = document.getElementById('specificShotTime').value;
         const folder = document.getElementById('autoShotFolder').value.trim() || 'QA-Screenshots';
 
-        if (!timeInput) return alert('Please select a time');
+        if (!timeInput) { showStatus('Please select a time', true); return; }
         const schedTime = new Date(timeInput).getTime();
-        if (schedTime <= Date.now()) return alert('Time must be in the future');
+        if (schedTime <= Date.now()) { showStatus('Time must be in the future', true); return; }
 
         const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-        if (!tab) return alert('No active tab found');
+        if (!tab) { showStatus('No active tab found', true); return; }
 
         const taskId = 'specificShot_' + Date.now();
         const task = {
@@ -549,7 +623,7 @@ document.addEventListener('DOMContentLoaded', () => {
         chrome.storage.local.set({ autoTasks });
         chrome.alarms.create(taskId, { when: schedTime });
         renderAutoTasks();
-        alert('Scheduled screenshot for ' + new Date(schedTime).toLocaleString());
+        showStatus('Scheduled screenshot for ' + new Date(schedTime).toLocaleString());
     });
 
     function loadAutoTasks() {
@@ -617,7 +691,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('findKeywordBtn').addEventListener('click', async () => {
         const keyword = document.getElementById('keywordInput').value.trim();
         const useRegex = document.getElementById('useRegex').checked;
-        if (!keyword) return alert('Please enter a keyword');
+        if (!keyword) { showStatus('Please enter a keyword', true); return; }
 
         const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
         if (!tab) return;
@@ -625,27 +699,27 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             await chrome.scripting.executeScript({ target: { tabId: tab.id }, files: ['scripts/keyword_spotter.js'] });
             chrome.tabs.sendMessage(tab.id, { action: 'findKeyword', keyword, useRegex }, (response) => {
-                if (chrome.runtime.lastError) return alert('Error: ' + chrome.runtime.lastError.message);
-                if (response?.error) return alert('Error: ' + response.error);
+                if (chrome.runtime.lastError) { showStatus('Error: ' + chrome.runtime.lastError.message, true); return; }
+                if (response?.error) { showStatus('Error: ' + response.error, true); return; }
                 if (response?.count > 0) {
                     saveMatchLog(keyword, response.count, response.url);
-                    alert(`Found ${response.count} matches! These are now highlighted in yellow.`);
+                    showStatus(`Found ${response.count} matches! These are now highlighted in yellow.`);
                 } else {
-                    alert('No matches found on this page.');
+                    showStatus('No matches found on this page.');
                 }
             });
-        } catch (err) { alert('Failed: ' + err.message); }
+        } catch (err) { showStatus('Failed: ' + err.message); }
     });
 
     // Watch Mode
     document.getElementById('startWatchKeywordBtn').addEventListener('click', async () => {
         const keyword = document.getElementById('keywordInput').value.trim();
-        if (!keyword) return alert('Please enter a keyword to watch');
+        if (!keyword) { showStatus('Please enter a keyword to watch', true); return; }
 
         const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
 
         // Save to tracked list
-        if (trackedKeywords.find(k => k.keyword === keyword)) return alert('Already watching this keyword');
+        if (trackedKeywords.find(k => k.keyword === keyword)) { showStatus('Already watching this keyword', true); return; }
 
         trackedKeywords.push({ id: 'track_' + Date.now(), keyword });
         chrome.storage.local.set({ trackedKeywords });
@@ -659,7 +733,7 @@ document.addEventListener('DOMContentLoaded', () => {
             } catch (e) { }
         }
 
-        alert(`Now watching for "${keyword}". You will get a notification when it appears!`);
+        showStatus(`Now watching for "${keyword}". You will get a notification when it appears!`);
         document.getElementById('keywordInput').value = '';
     });
 
@@ -863,4 +937,709 @@ document.addEventListener('DOMContentLoaded', () => {
             loadKeywordSpotterData();
         });
     }
+
+    // --- Cookie Manager Logic ---
+    function downloadJson(data, filename) {
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }
+
+    // Cookie mode toggle
+    document.getElementById('cookieModeBtn').addEventListener('click', () => {
+        document.getElementById('cookieModeBtn').classList.add('active');
+        document.getElementById('storageModeBtn').classList.remove('active');
+        document.getElementById('cookieSection').classList.remove('hidden');
+        document.getElementById('storageSection').classList.add('hidden');
+    });
+
+    document.getElementById('storageModeBtn').addEventListener('click', () => {
+        document.getElementById('storageModeBtn').classList.add('active');
+        document.getElementById('cookieModeBtn').classList.remove('active');
+        document.getElementById('storageSection').classList.remove('hidden');
+        document.getElementById('cookieSection').classList.add('hidden');
+    });
+
+    // --- Export Cookies ---
+    document.getElementById('exportCookiesBtn').addEventListener('click', async () => {
+        const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+        if (!tab || !tab.url) { showStatus('No active tab found.', true); return; }
+        const url = new URL(tab.url);
+        chrome.cookies.getAll({ domain: url.hostname }, (cookies) => {
+            if (chrome.runtime.lastError) {
+                showStatus('Error: ' + chrome.runtime.lastError.message);
+                return;
+            }
+            downloadJson(cookies, `cookies-${url.hostname}-${Date.now()}.json`);
+        });
+    });
+
+    // --- Import Cookies (show textarea) ---
+    document.getElementById('importCookiesBtn').addEventListener('click', async () => {
+        const section = document.getElementById('cookieImportSection');
+        const textarea = document.getElementById('cookieInputData');
+        if (section.classList.contains('hidden')) {
+            // Pre-populate with current cookies for easy editing
+            const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+            if (tab && tab.url) {
+                const url = new URL(tab.url);
+                chrome.cookies.getAll({ domain: url.hostname }, (cookies) => {
+                    textarea.value = JSON.stringify(cookies, null, 2);
+                    section.classList.remove('hidden');
+                });
+            } else {
+                section.classList.remove('hidden');
+            }
+        } else {
+            section.classList.add('hidden');
+        }
+    });
+
+    // --- Save (Import) Cookies ---
+    document.getElementById('saveCookiesBtn').addEventListener('click', async () => {
+        const raw = document.getElementById('cookieInputData').value.trim();
+        if (!raw) { showStatus('Please paste cookie JSON first.', true); return; }
+        let cookies;
+        try {
+            cookies = JSON.parse(raw);
+            if (!Array.isArray(cookies)) throw new Error('Must be an array.');
+        } catch (e) {
+            { showStatus('Invalid JSON: ' + e.message, true); return; }
+        }
+
+        const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+        if (!tab || !tab.url) { showStatus('No active tab.', true); return; }
+        const tabUrl = new URL(tab.url);
+        let successCount = 0;
+        let failCount = 0;
+
+        const setNext = (i) => {
+            if (i >= cookies.length) {
+                showStatus(`Done! Set ${successCount} cookies, ${failCount} failed.`);
+                return;
+            }
+            const c = cookies[i];
+            // Build the cookie details — strip read-only fields
+            const details = {
+                url: `${tabUrl.protocol}//${c.domain || tabUrl.hostname}${c.path || '/'}`,
+                name: c.name,
+                value: c.value || '',
+                path: c.path || '/',
+                secure: c.secure || false,
+                httpOnly: c.httpOnly || false,
+                sameSite: c.sameSite || 'unspecified',
+            };
+            if (c.expirationDate) details.expirationDate = c.expirationDate;
+            if (c.domain) details.domain = c.domain;
+            chrome.cookies.set(details, (result) => {
+                if (chrome.runtime.lastError || !result) failCount++;
+                else successCount++;
+                setNext(i + 1);
+            });
+        };
+        setNext(0);
+    });
+
+    // --- Export Local Storage ---
+    document.getElementById('exportStorageBtn').addEventListener('click', async () => {
+        const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+        if (!tab) { showStatus('No active tab.', true); return; }
+        chrome.scripting.executeScript({
+            target: { tabId: tab.id },
+            func: () => {
+                const data = {};
+                for (let i = 0; i < localStorage.length; i++) {
+                    const key = localStorage.key(i);
+                    data[key] = localStorage.getItem(key);
+                }
+                return data;
+            }
+        }, (results) => {
+            if (chrome.runtime.lastError) { showStatus('Error: ' + chrome.runtime.lastError.message, true); return; }
+            const data = results[0].result;
+            const hostname = new URL(tab.url).hostname;
+            downloadJson(data, `localstorage-${hostname}-${Date.now()}.json`);
+        });
+    });
+
+    // --- Import Local Storage (show textarea) ---
+    document.getElementById('importStorageBtn').addEventListener('click', async () => {
+        const section = document.getElementById('storageImportSection');
+        const textarea = document.getElementById('storageInputData');
+        if (section.classList.contains('hidden')) {
+            // Pre-populate with current localStorage for easy editing
+            const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+            if (tab) {
+                chrome.scripting.executeScript({
+                    target: { tabId: tab.id },
+                    func: () => {
+                        const data = {};
+                        for (let i = 0; i < localStorage.length; i++) {
+                            const key = localStorage.key(i);
+                            data[key] = localStorage.getItem(key);
+                        }
+                        return data;
+                    }
+                }, (results) => {
+                    if (!chrome.runtime.lastError && results[0]) {
+                        textarea.value = JSON.stringify(results[0].result, null, 2);
+                    }
+                    section.classList.remove('hidden');
+                });
+            } else {
+                section.classList.remove('hidden');
+            }
+        } else {
+            section.classList.add('hidden');
+        }
+    });
+
+    // --- Save (Import) Local Storage ---
+    document.getElementById('saveStorageBtn').addEventListener('click', async () => {
+        const raw = document.getElementById('storageInputData').value.trim();
+        if (!raw) { showStatus('Please paste localStorage JSON first.', true); return; }
+        let data;
+        try {
+            data = JSON.parse(raw);
+            if (typeof data !== 'object' || Array.isArray(data)) throw new Error('Must be a plain object {key: value}.');
+        } catch (e) {
+            { showStatus('Invalid JSON: ' + e.message, true); return; }
+        }
+
+        const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+        if (!tab) { showStatus('No active tab.', true); return; }
+        chrome.scripting.executeScript({
+            target: { tabId: tab.id },
+            func: (storageData) => {
+                for (const [key, value] of Object.entries(storageData)) {
+                    localStorage.setItem(key, value);
+                }
+                return Object.keys(storageData).length;
+            },
+            args: [data]
+        }, (results) => {
+            if (chrome.runtime.lastError) { showStatus('Error: ' + chrome.runtime.lastError.message, true); return; }
+            showStatus(`Saved ${results[0].result} keys to localStorage successfully!`);
+        });
+    });
+
+    // ─── Form Filler Logic ─────────────────────────────────────────────────────
+
+    let ffProfiles = [];
+    let ffCurrentProfileId = null;
+
+    function ffLoadProfiles() {
+        chrome.storage.local.get(['ffProfiles', 'ffActiveProfile'], (res) => {
+            ffProfiles = res.ffProfiles || [];
+            ffCurrentProfileId = res.ffActiveProfile || null;
+            ffRenderProfileSelect();
+        });
+    }
+
+    function ffSaveProfiles(cb) {
+        chrome.storage.local.set({ ffProfiles }, cb);
+    }
+
+    function ffRenderProfileSelect() {
+        const sel = document.getElementById('ffProfileSelect');
+        sel.innerHTML = '<option value="">-- Select Profile --</option>';
+        ffProfiles.forEach(p => {
+            const opt = document.createElement('option');
+            opt.value = p.id;
+            opt.textContent = p.name;
+            if (p.id === ffCurrentProfileId) opt.selected = true;
+            sel.appendChild(opt);
+        });
+        ffUpdateActionsVisibility();
+    }
+
+    function ffUpdateActionsVisibility() {
+        const sel = document.getElementById('ffProfileSelect');
+        const hasProfile = sel.value !== '';
+        document.getElementById('ffActions').classList.toggle('hidden', !hasProfile);
+    }
+
+    // Profile select change
+    document.getElementById('ffProfileSelect').addEventListener('change', () => {
+        const sel = document.getElementById('ffProfileSelect');
+        ffCurrentProfileId = sel.value || null;
+        chrome.storage.local.set({ ffActiveProfile: ffCurrentProfileId });
+        ffUpdateActionsVisibility();
+        if (ffCurrentProfileId) ffOpenProfileEditor(ffCurrentProfileId);
+        else document.getElementById('ffProfileEditor').classList.add('hidden');
+    });
+
+    // New profile
+    document.getElementById('ffNewProfileBtn').addEventListener('click', () => {
+        const newProfile = {
+            id: 'profile_' + Date.now(),
+            name: 'New Profile',
+            rules: [
+                { match: '', type: 'alphanumeric', length: 10 }
+            ]
+        };
+        ffProfiles.push(newProfile);
+        ffSaveProfiles(() => {
+            ffCurrentProfileId = newProfile.id;
+            chrome.storage.local.set({ ffActiveProfile: ffCurrentProfileId });
+            ffRenderProfileSelect();
+            ffOpenProfileEditor(newProfile.id);
+        });
+    });
+
+    // Delete profile
+    document.getElementById('ffDeleteProfileBtn').addEventListener('click', () => {
+        if (!ffCurrentProfileId) { showStatus('Select a profile to delete.', true); return; }
+        if (!confirm('Delete this profile?')) return;
+        ffProfiles = ffProfiles.filter(p => p.id !== ffCurrentProfileId);
+        ffCurrentProfileId = null;
+        chrome.storage.local.set({ ffProfiles, ffActiveProfile: null });
+        ffRenderProfileSelect();
+        document.getElementById('ffProfileEditor').classList.add('hidden');
+        document.getElementById('ffActions').classList.add('hidden');
+    });
+
+    function ffOpenProfileEditor(profileId) {
+        const profile = ffProfiles.find(p => p.id === profileId);
+        if (!profile) return;
+        document.getElementById('ffProfileName').value = profile.name;
+        ffRenderRules(profile.rules);
+        document.getElementById('ffProfileEditor').classList.remove('hidden');
+    }
+
+    function ffRenderRules(rules) {
+        const container = document.getElementById('ffRulesList');
+        container.innerHTML = '';
+        rules.forEach((rule, idx) => {
+            const wrap = document.createElement('div');
+            wrap.style.cssText = 'background:var(--bg-secondary, #1a1a1a); border:1px solid var(--border, #333); border-radius:8px; padding:8px; margin-bottom:6px; font-size:11px;';
+            wrap.innerHTML = `
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                    <span style="font-weight:600;">Rule #${idx + 1}</span>
+                    <button class="ff-del-rule" data-idx="${idx}" style="border:none;background:transparent;color:#ff4444;cursor:pointer;font-weight:bold;">✕</button>
+                </div>
+                <label style="display:block;margin-bottom:3px;">Field Match (name/id/placeholder contains)</label>
+                <input class="ff-rule-match" data-idx="${idx}" type="text" value="${escapeHtml(rule.match || '')}" placeholder="e.g. email, phone, username (blank = all)" style="width:100%; margin-bottom:5px;">
+                <label style="display:block;margin-bottom:3px;">Data Type</label>
+                <select class="ff-rule-type" data-idx="${idx}" style="width:100%; margin-bottom:5px;">
+                    ${['name', 'firstname', 'lastname', 'email', 'phone', 'integer', 'alpha', 'alphanumeric', 'symbols', 'mixed', 'url', 'date', 'password', 'custom'].map(t =>
+                `<option value="${t}" ${rule.type === t ? 'selected' : ''}>${t}</option>`
+            ).join('')}
+                </select>
+                <div class="ff-extra-fields" data-idx="${idx}">
+                    ${rule.type === 'integer' ? `
+                        <div style="display:flex;gap:6px;">
+                            <div style="flex:1;"><label>Min</label><input class="ff-rule-min" data-idx="${idx}" type="number" value="${rule.min !== undefined ? rule.min : 1}" style="width:100%;"></div>
+                            <div style="flex:1;"><label>Max</label><input class="ff-rule-max" data-idx="${idx}" type="number" value="${rule.max !== undefined ? rule.max : 9999}" style="width:100%;"></div>
+                        </div>` : rule.type === 'custom' ? `
+                        <label>Fixed Value</label>
+                        <input class="ff-rule-value" data-idx="${idx}" type="text" value="${escapeHtml(rule.value || '')}" style="width:100%;">` : `
+                        <label>Length</label>
+                        <input class="ff-rule-length" data-idx="${idx}" type="number" value="${rule.length || 10}" min="1" max="200" style="width:100%;">`
+                }
+                </div>
+            `;
+            container.appendChild(wrap);
+        });
+
+        // Delete rule
+        container.querySelectorAll('.ff-del-rule').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const profile = ffProfiles.find(p => p.id === ffCurrentProfileId);
+                profile.rules.splice(parseInt(btn.dataset.idx), 1);
+                ffRenderRules(profile.rules);
+            });
+        });
+
+        // Live-update rule values
+        function syncRule(el, field) {
+            const idx = parseInt(el.dataset.idx);
+            const profile = ffProfiles.find(p => p.id === ffCurrentProfileId);
+            profile.rules[idx][field] = el.type === 'number' ? Number(el.value) : el.value;
+            if (field === 'type') {
+                ffRenderRules(profile.rules);
+            }
+        }
+        container.querySelectorAll('.ff-rule-match').forEach(el => el.addEventListener('input', () => syncRule(el, 'match')));
+        container.querySelectorAll('.ff-rule-type').forEach(el => el.addEventListener('change', () => syncRule(el, 'type')));
+        container.querySelectorAll('.ff-rule-length').forEach(el => el.addEventListener('input', () => syncRule(el, 'length')));
+        container.querySelectorAll('.ff-rule-min').forEach(el => el.addEventListener('input', () => syncRule(el, 'min')));
+        container.querySelectorAll('.ff-rule-max').forEach(el => el.addEventListener('input', () => syncRule(el, 'max')));
+        container.querySelectorAll('.ff-rule-value').forEach(el => el.addEventListener('input', () => syncRule(el, 'value')));
+    }
+
+    // Add rule
+    document.getElementById('ffAddRuleBtn').addEventListener('click', () => {
+        const profile = ffProfiles.find(p => p.id === ffCurrentProfileId);
+        if (!profile) return;
+        profile.rules.push({ match: '', type: 'alphanumeric', length: 10 });
+        ffRenderRules(profile.rules);
+    });
+
+    // Save profile
+    document.getElementById('ffSaveProfileBtn').addEventListener('click', () => {
+        const profile = ffProfiles.find(p => p.id === ffCurrentProfileId);
+        if (!profile) return;
+        profile.name = document.getElementById('ffProfileName').value.trim() || 'Unnamed Profile';
+        ffSaveProfiles(() => {
+            ffRenderProfileSelect();
+            showStatus('Profile saved!');
+        });
+    });
+
+    // Fill Form
+    document.getElementById('ffFillBtn').addEventListener('click', async () => {
+        const profile = ffProfiles.find(p => p.id === ffCurrentProfileId);
+        const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+        if (!tab) { showStatus('No active tab.', true); return; }
+        chrome.scripting.executeScript({
+            target: { tabId: tab.id },
+            files: ['scripts/form_filler.js']
+        }, () => {
+            chrome.tabs.sendMessage(tab.id, {
+                action: 'ffFill',
+                rules: profile ? profile.rules : []
+            }, (res) => {
+                if (chrome.runtime.lastError) { showStatus('Error: ' + chrome.runtime.lastError.message, true); return; }
+                showStatus(`✅ Filled ${res.count} fields!`);
+            });
+        });
+    });
+
+    // Clear Form
+    document.getElementById('ffClearBtn').addEventListener('click', async () => {
+        const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+        if (!tab) { showStatus('No active tab.', true); return; }
+        chrome.scripting.executeScript({
+            target: { tabId: tab.id },
+            files: ['scripts/form_filler.js']
+        }, () => {
+            chrome.tabs.sendMessage(tab.id, { action: 'ffClear' }, (res) => {
+                if (chrome.runtime.lastError) { showStatus('Error: ' + chrome.runtime.lastError.message, true); return; }
+                showStatus(`🗑️ Cleared ${res.count} fields!`);
+            });
+        });
+    });
+
+    // ─── Console Error Collector Logic ────────────────────────────────────────────
+
+    let ccAllLogs = [];
+    let ccFilter = 'all';
+
+    // MAIN-world console interceptor (serialized and injected via executeScript)
+    function mainWorldInterceptor() {
+        if (window.__qaConsoleIntercepted) return;
+        window.__qaConsoleIntercepted = true;
+        window.__qaLogs = window.__qaLogs || [];
+
+        const _origError = console.error.bind(console);
+        const _origWarn = console.warn.bind(console);
+        const _origLog = console.log.bind(console);
+        const _origInfo = console.info.bind(console);
+
+        function capture(type, args) {
+            const msg = args.map(a => {
+                try { return typeof a === 'object' ? JSON.stringify(a) : String(a); } catch (_) { return String(a); }
+            }).join(' ');
+            window.__qaLogs.push({ type, msg: msg.substring(0, 500), time: new Date().toISOString() });
+        }
+
+        console.error = function (...a) { capture('error', a); _origError(...a); };
+        console.warn = function (...a) { capture('warn', a); _origWarn(...a); };
+        console.log = function (...a) { capture('info', a); _origLog(...a); };
+        console.info = function (...a) { capture('info', a); _origInfo(...a); };
+    }
+
+    function readMainWorldLogs() {
+        return (window.__qaLogs || []).slice();
+    }
+
+    async function ccInjectAndFetch(tab) {
+        // 1. Inject MAIN world interceptor (captures console.*)  
+        await chrome.scripting.executeScript({
+            target: { tabId: tab.id },
+            world: 'MAIN',
+            func: mainWorldInterceptor
+        }).catch(() => { });
+
+        // 2. Inject isolated-world collector (captures onerror/unhandledrejection)
+        await chrome.scripting.executeScript({
+            target: { tabId: tab.id },
+            files: ['scripts/console_collector.js']
+        }).catch(() => { });
+
+        // 3. Read MAIN world logs
+        let mainLogs = [];
+        const mainResult = await chrome.scripting.executeScript({
+            target: { tabId: tab.id },
+            world: 'MAIN',
+            func: readMainWorldLogs
+        }).catch(() => null);
+        if (mainResult && mainResult[0]) mainLogs = mainResult[0].result || [];
+
+        // 4. Read isolated world logs
+        let isoLogs = [];
+        await new Promise(resolve => {
+            chrome.tabs.sendMessage(tab.id, { action: 'getConsoleLogs' }, (res) => {
+                if (!chrome.runtime.lastError && res && res.logs) isoLogs = res.logs;
+                resolve();
+            });
+        });
+
+        // Merge + de-dup by time+msg, sort newest first
+        const merged = [...mainLogs, ...isoLogs];
+        merged.sort((a, b) => new Date(b.time) - new Date(a.time));
+        return merged;
+    }
+
+    function ccRenderLogs() {
+        const container = document.getElementById('ccLogList');
+        const filtered = ccFilter === 'all'
+            ? ccAllLogs
+            : ccAllLogs.filter(l => l.type === ccFilter);
+
+        // Update counts
+        document.getElementById('ccErrorCount').textContent = ccAllLogs.filter(l => l.type === 'error').length;
+        document.getElementById('ccWarnCount').textContent = ccAllLogs.filter(l => l.type === 'warn').length;
+        document.getElementById('ccInfoCount').textContent = ccAllLogs.filter(l => l.type === 'info').length;
+
+        if (!filtered.length) {
+            container.innerHTML = `<div class="empty-state">${ccFilter === 'all' ? 'No logs captured yet. Click Refresh.' : `No ${ccFilter} logs.`}</div>`;
+            return;
+        }
+
+        container.innerHTML = filtered.map(log => {
+            const color = log.type === 'error' ? '#f87171' : log.type === 'warn' ? '#fbbf24' : '#60a5fa';
+            const icon = log.type === 'error' ? '✖' : log.type === 'warn' ? '⚠' : 'ℹ';
+            const t = new Date(log.time).toLocaleTimeString();
+            return `
+                <div style="padding:7px 10px; border-bottom:1px solid var(--border,#333); font-size:11px;">
+                    <div style="display:flex; justify-content:space-between; margin-bottom:2px;">
+                        <span style="color:${color}; font-weight:700;">${icon} ${log.type.toUpperCase()}</span>
+                        <span style="color:var(--text-muted,#888); font-size:9px;">${t}</span>
+                    </div>
+                    <div style="word-break:break-word; color:var(--text,#ddd);">${escapeHtml(log.msg)}</div>
+                    ${log.source ? `<div style="color:var(--text-muted,#888); font-size:9px; margin-top:2px;">${escapeHtml(log.source)}</div>` : ''}
+                </div>
+            `;
+        }).join('');
+    }
+
+    if (document.getElementById('consoleCollectorBtn')) {
+        document.getElementById('consoleCollectorBtn').addEventListener('click', async () => {
+            switchView('consoleCollectorView');
+            const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+            if (!tab) return;
+            ccAllLogs = await ccInjectAndFetch(tab);
+            ccRenderLogs();
+        });
+    }
+
+    // Filter buttons
+    ['All', 'Error', 'Warn', 'Info'].forEach(label => {
+        const btn = document.getElementById(`ccFilter${label}`);
+        if (!btn) return;
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('#consoleCollectorView .mode-toggle button').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            ccFilter = label.toLowerCase() === 'all' ? 'all' : label.toLowerCase();
+            ccRenderLogs();
+        });
+    });
+
+    // Refresh
+    document.getElementById('ccRefreshBtn').addEventListener('click', async () => {
+        const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+        if (!tab) { showStatus('No active tab.', true); return; }
+        ccAllLogs = await ccInjectAndFetch(tab);
+        ccRenderLogs();
+        showStatus(`Refreshed — ${ccAllLogs.length} total log entries`);
+    });
+
+    // Clear
+    document.getElementById('ccClearBtn').addEventListener('click', async () => {
+        const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+        if (tab) {
+            // Clear MAIN world logs
+            await chrome.scripting.executeScript({
+                target: { tabId: tab.id },
+                world: 'MAIN',
+                func: () => { if (window.__qaLogs) window.__qaLogs.length = 0; }
+            }).catch(() => { });
+            // Clear isolated world logs
+            chrome.tabs.sendMessage(tab.id, { action: 'clearConsoleLogs' }).catch(() => { });
+        }
+        ccAllLogs = [];
+        ccRenderLogs();
+        showStatus('Logs cleared');
+    });
+
+    // Export JSON
+    document.getElementById('ccExportBtn').addEventListener('click', () => {
+        if (!ccAllLogs.length) { showStatus('No logs to export', true); return; }
+        const blob = new Blob([JSON.stringify(ccAllLogs, null, 2)], { type: 'application/json' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = `console_logs_${Date.now()}.json`;
+        document.body.appendChild(a); a.click();
+        document.body.removeChild(a);
+        showStatus(`Exported ${ccAllLogs.length} log entries`);
+    });
+
+    // ─── Bulk URL Opener Logic ─────────────────────────────────────────────────
+
+    const buTextarea = document.getElementById('buUrlTextarea');
+    const buCountSpan = document.getElementById('buUrlCount');
+
+    function buGetUrls() {
+        return (buTextarea.value || '')
+            .split('\n')
+            .map(u => u.trim())
+            .filter(u => u.length > 0);
+    }
+
+    function buSetUrls(urls) {
+        buTextarea.value = urls.join('\n');
+        buUpdateCount();
+    }
+
+    function buAppendUrls(newUrls) {
+        const existing = new Set(buGetUrls());
+        const toAdd = newUrls.filter(u => !existing.has(u));  // de-duplicate
+        const merged = [...existing, ...toAdd];
+        buSetUrls(merged);
+        return toAdd.length;
+    }
+
+    function buUpdateCount() {
+        buCountSpan.textContent = buGetUrls().length;
+    }
+
+    function buIsValidUrl(u) {
+        try { const p = new URL(u); return p.protocol.startsWith('http'); } catch (_) { return false; }
+    }
+
+    function buNormalise(u) {
+        u = u.trim();
+        if (!u) return null;
+        if (!u.startsWith('http://') && !u.startsWith('https://')) {
+            if (u.includes('.')) u = 'https://' + u;  // bare domain: google.com
+        }
+        return buIsValidUrl(u) ? u : null;
+    }
+
+    // Keep count in sync as user types
+    buTextarea.addEventListener('input', buUpdateCount);
+
+    // Button: Open the view
+    if (document.getElementById('bulkUrlOpenerBtn')) {
+        document.getElementById('bulkUrlOpenerBtn').addEventListener('click', () => {
+            switchView('bulkUrlOpenerView');
+            buUpdateCount();
+        });
+    }
+
+    // Export current tabs
+    document.getElementById('buExportTabsBtn').addEventListener('click', () => {
+        chrome.tabs.query({}, (tabs) => {
+            if (chrome.runtime.lastError) { showStatus('Cannot query tabs: ' + chrome.runtime.lastError.message, true); return; }
+            const urls = tabs
+                .map(t => t.url)
+                .filter(u => u && u.startsWith('http'));
+            const added = buAppendUrls(urls);
+            showStatus(`✅ Loaded ${added} tab URLs (${urls.length - added} already in list)`);
+        });
+    });
+
+    // Export history
+    document.getElementById('buExportHistoryBtn').addEventListener('click', () => {
+        const maxHistory = 200;
+        const startTime = Date.now() - 7 * 24 * 60 * 60 * 1000; // last 7 days
+        chrome.history.search({ text: '', maxResults: maxHistory, startTime }, (items) => {
+            if (chrome.runtime.lastError) { showStatus('History error: ' + chrome.runtime.lastError.message, true); return; }
+            const urls = (items || [])
+                .map(i => i.url)
+                .filter(u => u && u.startsWith('http'));
+            const added = buAppendUrls(urls);
+            showStatus(`✅ Loaded ${added} history URLs (${urls.length - added} already in list)`);
+        });
+    });
+
+    // Import .txt / .csv file
+    document.getElementById('buImportFileBtn').addEventListener('click', () => {
+        document.getElementById('buFileInput').click();
+    });
+    document.getElementById('buFileInput').addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+            const lines = (ev.target.result || '').split(/\r?\n/);
+            const urls = lines.map(buNormalise).filter(Boolean);
+            const added = buAppendUrls(urls);
+            showStatus(`✅ Imported ${added} URLs from ${file.name}`);
+        };
+        reader.readAsText(file);
+        e.target.value = ''; // reset so same file can be re-imported
+    });
+
+    // Manual add
+    document.getElementById('buAddUrlBtn').addEventListener('click', () => {
+        const input = document.getElementById('buAddUrlInput');
+        const raw = input.value.trim();
+        if (!raw) return;
+        const url = buNormalise(raw);
+        if (!url) { showStatus('❌ Invalid URL — must start with http(s)://', true); return; }
+        const added = buAppendUrls([url]);
+        if (added) {
+            showStatus(`Added: ${url}`);
+            input.value = '';
+        } else {
+            showStatus('URL already in list', true);
+        }
+    });
+    // Allow pressing Enter in the add input
+    document.getElementById('buAddUrlInput').addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') document.getElementById('buAddUrlBtn').click();
+    });
+
+    // Clear list
+    document.getElementById('buClearListBtn').addEventListener('click', () => {
+        buTextarea.value = '';
+        buUpdateCount();
+        showStatus('List cleared');
+    });
+
+    // Open All URLs
+    document.getElementById('buOpenAllBtn').addEventListener('click', async () => {
+        const allUrls = buGetUrls()
+            .map(buNormalise)
+            .filter(Boolean);
+
+        if (!allUrls.length) { showStatus('No valid URLs in list', true); return; }
+
+        const delay = Math.max(0, parseInt(document.getElementById('buDelay').value) || 400);
+        const maxOpen = Math.min(200, parseInt(document.getElementById('buMaxOpen').value) || 20);
+        const toOpen = allUrls.slice(0, maxOpen);
+
+        showStatus(`Opening ${toOpen.length} URL(s)...`);
+
+        for (const url of toOpen) {
+            chrome.tabs.create({ url, active: false });
+            if (delay > 0) await new Promise(r => setTimeout(r, delay));
+        }
+
+        if (allUrls.length > maxOpen) {
+            showStatus(`Opened ${maxOpen} of ${allUrls.length} URLs. Increase Max to open more.`);
+        } else {
+            showStatus(`✅ Opened ${toOpen.length} URLs in new tabs`);
+        }
+    });
+
 });

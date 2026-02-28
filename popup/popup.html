@@ -29,6 +29,16 @@
                 Spotter</button>
             <button id="noteTaggerBtn" class="tool-btn" title="Tag Elements with Notes"><span>📌</span> Note
                 Tagger</button>
+            <button id="cookieManagerBtn" class="tool-btn" title="Manage Cookies &amp; Local Storage"><span>🍪</span>
+                Cookie
+                Manager</button>
+            <button id="formFillerBtn" class="tool-btn" title="Form Autofill / Test Data Generator"><span>🧩</span> Form
+                Filler</button>
+            <button id="consoleCollectorBtn" class="tool-btn"
+                title="Capture JS Console Errors &amp; Warnings"><span>🚨</span> Console
+                Errors</button>
+            <button id="bulkUrlOpenerBtn" class="tool-btn" title="Bulk URL Opener"><span>🌐</span> Bulk URL
+                Opener</button>
         </div>
 
         <div class="settings-section">
@@ -43,6 +53,10 @@
             <div class="setting-item">
                 <input type="checkbox" id="recordingTimestamp" checked>
                 <label for="recordingTimestamp">Add timestamp overlay to recording</label>
+            </div>
+            <div class="setting-item">
+                <input type="checkbox" id="captureWholeScreen">
+                <label for="captureWholeScreen">Capture entire screen (Desktop/OS)</label>
             </div>
         </div>
 
@@ -222,6 +236,11 @@
 
         <!-- Interval Mode -->
         <div id="intervalForm">
+            <div class="setting-item" style="margin-bottom: 15px;">
+                <input type="checkbox" id="fullScreenCapture">
+                <label for="fullScreenCapture"><b>Capture Entire Desktop</b> (Will prompt once for screen
+                    permission)</label>
+            </div>
             <div class="time-inputs">
                 <div>
                     <label>Every (Sec)</label>
@@ -330,6 +349,194 @@
                 <div class="empty-state">No notes on this page</div>
             </div>
         </div>
+    </div>
+
+    <!-- Cookie Manager View -->
+    <div class="container hidden" id="cookieManagerView">
+        <div class="view-header">
+            <button class="back-btn" data-target="mainView">← Back</button>
+            <h2>🍪 Cookie Manager</h2>
+        </div>
+
+        <div class="mode-toggle">
+            <button id="cookieModeBtn" class="active">Cookies</button>
+            <button id="storageModeBtn">Local Storage</button>
+        </div>
+
+        <div id="cookieSection">
+            <div class="action-buttons" style="margin-bottom: 10px;">
+                <button id="exportCookiesBtn" class="primary-btn">Export Cookies to JSON</button>
+                <button id="importCookiesBtn" class="secondary">Import Cookies</button>
+            </div>
+            <div id="cookieImportSection" class="hidden">
+                <textarea id="cookieInputData" rows="6" placeholder="Paste JSON here to edit and import..."
+                    style="width: 100%; margin-bottom: 10px;"></textarea>
+                <button id="saveCookiesBtn" class="primary-btn">Save Cookies</button>
+            </div>
+        </div>
+
+        <div id="storageSection" class="hidden">
+            <div class="action-buttons" style="margin-bottom: 10px;">
+                <button id="exportStorageBtn" class="primary-btn">Export Storage to JSON</button>
+                <button id="importStorageBtn" class="secondary">Import Storage</button>
+            </div>
+            <div id="storageImportSection" class="hidden">
+                <textarea id="storageInputData" rows="6" placeholder="Paste JSON here to edit and import..."
+                    style="width: 100%; margin-bottom: 10px;"></textarea>
+                <button id="saveStorageBtn" class="primary-btn">Save Local Storage</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Form Filler View -->
+    <div class="container hidden" id="formFillerView">
+        <div class="view-header">
+            <button class="back-btn" data-target="mainView">← Back</button>
+            <h2>🧹 Form Filler</h2>
+        </div>
+
+        <!-- Profile Selector -->
+        <div style="display:flex; gap:6px; align-items:center; margin-bottom:10px;">
+            <select id="ffProfileSelect" style="flex:1;">
+                <option value="">-- Select Profile --</option>
+            </select>
+            <button id="ffNewProfileBtn" class="secondary" style="white-space:nowrap;">+ New</button>
+            <button id="ffDeleteProfileBtn" class="secondary" style="white-space:nowrap; color:#ff4444;">Delete</button>
+        </div>
+
+        <!-- Profile Editor -->
+        <div id="ffProfileEditor" class="hidden">
+            <div class="input-group" style="margin-bottom:8px;">
+                <label>Profile Name</label>
+                <input type="text" id="ffProfileName" placeholder="e.g. Login Test, Signup QA">
+            </div>
+
+            <div style="font-size:11px; font-weight:600; margin-bottom:6px; color:var(--text-muted);">FIELD RULES</div>
+            <div id="ffRulesList"></div>
+
+            <button id="ffAddRuleBtn" class="secondary" style="width:100%; margin-top:6px;">+ Add Field Rule</button>
+
+            <div class="alert-box info-box" style="margin-top:10px;">
+                <div class="alert-title">💡 Data Types</div>
+                <p style="font-size:10px;">
+                    <b>name/email/phone/url/date</b> — Realistic values<br>
+                    <b>integer</b> — Random number (set min/max)<br>
+                    <b>alpha</b> — Letters only &nbsp; <b>alphanumeric</b> — Letters+numbers<br>
+                    <b>symbols</b> — Special chars &nbsp; <b>mixed</b> — All character types<br>
+                    <b>custom</b> — Fixed value you type
+                </p>
+            </div>
+
+            <button id="ffSaveProfileBtn" class="primary-btn" style="margin-top:10px;">Save Profile</button>
+        </div>
+
+        <!-- Actions -->
+        <div id="ffActions" class="hidden">
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-top:8px;">
+                <button id="ffFillBtn" class="primary-btn">⚡ Fill Form</button>
+                <button id="ffClearBtn" class="secondary">🗑️ Clear Form</button>
+            </div>
+            <div class="alert-box info-box" style="margin-top:10px;">
+                <div class="alert-title">⌨️ Keyboard Shortcuts</div>
+                <p style="font-size:10px;">
+                    <b>Ctrl+Shift+F</b> — Fill all form fields<br>
+                    <b>Ctrl+Shift+X</b> — Clear all form fields
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Console Collector View -->
+    <div class="container hidden" id="consoleCollectorView">
+        <div class="view-header">
+            <button class="back-btn" data-target="mainView">← Back</button>
+            <h2>🚨 Console Error Collector</h2>
+        </div>
+
+        <!-- Summary Row -->
+        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:6px; margin-bottom:10px; text-align:center;">
+            <div class="stat-card"
+                style="background:rgba(220,38,38,0.12); border:1px solid rgba(220,38,38,0.3); border-radius:8px; padding:8px;">
+                <div id="ccErrorCount" style="font-size:20px; font-weight:700; color:#f87171;">0</div>
+                <div style="font-size:10px; color:var(--text-muted);">Errors</div>
+            </div>
+            <div class="stat-card"
+                style="background:rgba(234,179,8,0.12); border:1px solid rgba(234,179,8,0.3); border-radius:8px; padding:8px;">
+                <div id="ccWarnCount" style="font-size:20px; font-weight:700; color:#fbbf24;">0</div>
+                <div style="font-size:10px; color:var(--text-muted);">Warnings</div>
+            </div>
+            <div class="stat-card"
+                style="background:rgba(59,130,246,0.12); border:1px solid rgba(59,130,246,0.3); border-radius:8px; padding:8px;">
+                <div id="ccInfoCount" style="font-size:20px; font-weight:700; color:#60a5fa;">0</div>
+                <div style="font-size:10px; color:var(--text-muted);">Info/Log</div>
+            </div>
+        </div>
+
+        <!-- Filter Tabs -->
+        <div class="mode-toggle" style="margin-bottom:8px;">
+            <button id="ccFilterAll" class="active">All</button>
+            <button id="ccFilterError">Errors</button>
+            <button id="ccFilterWarn">Warnings</button>
+            <button id="ccFilterInfo">Info</button>
+        </div>
+
+        <!-- Log List -->
+        <div id="ccLogList" class="url-list" style="max-height:220px; overflow-y:auto;">
+            <div class="empty-state">No logs captured yet. Open a page and click Refresh.</div>
+        </div>
+
+        <!-- Actions -->
+        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:6px; margin-top:10px;">
+            <button id="ccRefreshBtn" class="primary-btn">🔄 Refresh</button>
+            <button id="ccClearBtn" class="secondary">🗑️ Clear</button>
+            <button id="ccExportBtn" class="secondary">↓ Export JSON</button>
+        </div>
+    </div>
+
+    <!-- Bulk URL Opener View -->
+    <div class="container hidden" id="bulkUrlOpenerView">
+        <div class="view-header">
+            <button class="back-btn" data-target="mainView">← Back</button>
+            <h2>🌐 Bulk URL Opener</h2>
+        </div>
+
+        <!-- Source buttons -->
+        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:6px; margin-bottom:10px;">
+            <button id="buExportTabsBtn" class="secondary" title="Load all open tab URLs into the list">🖵 Export
+                Tabs</button>
+            <button id="buExportHistoryBtn" class="secondary" title="Load recent browser history into the list">🕓
+                History</button>
+            <button id="buImportFileBtn" class="secondary" title="Import a .txt file of URLs">📂 Import File</button>
+            <input id="buFileInput" type="file" accept=".txt,.csv" class="hidden">
+        </div>
+
+        <!-- Manual add row -->
+        <div style="display:flex; gap:6px; margin-bottom:8px;">
+            <input id="buAddUrlInput" type="text" placeholder="https://example.com" style="flex:1;">
+            <button id="buAddUrlBtn" class="secondary" style="white-space:nowrap;">+ Add</button>
+        </div>
+
+        <!-- Stats -->
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+            <span style="font-size:11px; color:var(--text-muted);"><span id="buUrlCount">0</span> URLs loaded</span>
+            <button id="buClearListBtn" class="secondary" style="font-size:11px; padding:3px 8px;">Clear All</button>
+        </div>
+
+        <!-- Editable URL list -->
+        <textarea id="buUrlTextarea" rows="9" placeholder="Paste URLs here (one per line)..."
+            style="width:100%; resize:vertical; font-family:monospace; font-size:11px;"></textarea>
+
+        <!-- Open options -->
+        <div style="display:flex; align-items:center; gap:8px; margin-top:8px; font-size:11px;">
+            <label for="buDelay">Delay (ms):</label>
+            <input id="buDelay" type="number" value="400" min="0" max="5000" step="100" style="width:70px;">
+            <label for="buMaxOpen">Max:</label>
+            <input id="buMaxOpen" type="number" value="20" min="1" max="200" style="width:55px;">
+        </div>
+
+        <!-- Action -->
+        <button id="buOpenAllBtn" class="primary-btn" style="margin-top:10px; width:100%;">⚡ Open All URLs in
+            Browser</button>
     </div>
 
     <div class="footer">

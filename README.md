@@ -25,6 +25,7 @@ A robust, all-in-one Chrome Extension designed for QA engineers and developers. 
   - `Enter` or `Ctrl+C`: Copy selected area to clipboard.
   - `Esc`: Cancel selection.
 - **Actions**: One-click **Copy to Clipboard** or **Save to Disk**.
+- **Whole Screen Capture**: Toggle in settings to capture the entire desktop/OS instead of just the tab.
 
 ### 3. 🎥 Screen Recorder
 - Record your screen, window, or specific tab.
@@ -92,8 +93,38 @@ A robust, all-in-one Chrome Extension designed for QA engineers and developers. 
 - **Visibility Control**: Toggle note markers on/off to keep the view clean.
 - **Management**: View, browse, and delete notes from the extension sidebar.
 
+### 10. 🍪 Cookie & Storage Manager
+- **Import/Export**: Easily move cookies and local storage data between environments.
+- **JSON Format**: Export all site data to a clean JSON file.
+- **Editing**: Modify keys and values directly during the import process.
+- **Session Debugging**: Quickly clear or reset specific storage keys without opening DevTools.
 
-## 🛠 Installation
+### 11. 🧩 Form Filler / Test Data Generator
+- **Fake Data**: Generate names, emails, phone numbers, and random strings.
+- **Custom Rules**: Define rules for specific fields (e.g., "Must be 10 digits").
+- **Multiple Profiles**: Save different test personas (e.g., "Guest User", "Admin").
+- **One-Click Fill**: Fill entire complex forms instantly.
+- **Keyboard Shortcuts**:
+  - `Ctrl+Shift+F` — Fill form
+  - `Ctrl+Shift+X` — Clear form
+
+### 12. � Console Error Collector
+- **Invisible Monitoring**: Backwards-compatible interceptor catches errors even if DevTools is closed.
+- **Page Crash Detection**: Automatically logs unhandled promise rejections and JS runtime errors.
+- **Count Badges**: Real-time count of Errors, Warnings, and Info messages.
+- **Export Logs**: Download the full console history as a JSON report for bug reports.
+
+### 13. 🌐 Bulk URL Opener
+- **Multi-Tab Launch**: Open dozens of URLs simultaneously in background tabs.
+- **Source Options**:
+  - **Export Tabs**: Grab all currently open tab URLs.
+  - **History**: Load recent URLs from your browser history.
+  - **Import**: Upload a `.txt` file of URLs to open.
+- **Smart Throttling**: Configure a delay (ms) between opening tabs to prevent system lag.
+- **Deduplication**: Automatically cleans your list of duplicate entries.
+
+
+## �🛠 Installation
 
 1. Clone or download this repository.
 2. Open Chrome and navigate to `chrome://extensions/`.
@@ -109,3 +140,7 @@ A robust, all-in-one Chrome Extension designed for QA engineers and developers. 
 
 ## 👤 Author
 **Ruturaj Sharbidre**
+
+## 🐛 Issues & Feedback
+Found a bug or have a feature request?
+[**Create an Issue on GitHub**](https://github.com/ruturajsharbidre/QA-Tools-kit/issues)
