@@ -24,38 +24,47 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     }
 
     // Recording session management
-    if (request.action === 'recordingStarted') {
+    if (request.action === 'initGlobalRecording' || request.action === 'recordingStarted') {
         const tabId = request.tabId || sender.tab?.id;
         if (!tabId) return;
 
-        activeRecordings[tabId] = {
+        // Mark global recording state
+        activeRecordings['global'] = {
             enableEffects: request.enableEffects,
             addTimestamp: request.addTimestamp
         };
 
-        // Inject overlay if effects are enabled
+        // Inject overlay into ALL tabs if effects are enabled
         if (request.enableEffects) {
-            chrome.scripting.executeScript({
-                target: { tabId: tabId, allFrames: true },
-                func: (timestamp) => { window.recordingAddTimestamp = timestamp; },
-                args: [request.addTimestamp]
-            }, () => {
-                chrome.scripting.executeScript({
-                    target: { tabId: tabId, allFrames: true },
-                    files: ['scripts/content_overlay.js']
+            chrome.tabs.query({}, (tabs) => {
+                tabs.forEach((tab) => {
+                    // Skip chrome:// URLs and similar protected pages
+                    if (!tab.url || tab.url.startsWith('chrome://') || tab.url.startsWith('edge://') || tab.url.startsWith('about:')) return;
+
+                    chrome.scripting.executeScript({
+                        target: { tabId: tab.id, allFrames: true },
+                        func: (timestamp) => { window.recordingAddTimestamp = timestamp; },
+                        args: [request.addTimestamp]
+                    }).then(() => {
+                        chrome.scripting.executeScript({
+                            target: { tabId: tab.id, allFrames: true },
+                            files: ['scripts/content_overlay.js']
+                        });
+                    }).catch(err => console.log('Could not inject overlay in tab', tab.id, err));
                 });
             });
         }
     }
 
     if (request.action === 'recordingStopped') {
-        const tabId = request.tabId || sender.tab?.id;
-        if (!tabId) return;
+        delete activeRecordings['global'];
 
-        delete activeRecordings[tabId];
-
-        // Remove overlays
-        chrome.tabs.sendMessage(tabId, { action: 'stopOverlay' }).catch(() => { });
+        // Remove overlays from ALL tabs
+        chrome.tabs.query({}, (tabs) => {
+            tabs.forEach((tab) => {
+                chrome.tabs.sendMessage(tab.id, { action: 'stopOverlay' }).catch(() => { });
+            });
+        });
     }
 
     if (request.action === 'keywordMatchFound') {
@@ -100,20 +109,39 @@ let activeRecordings = {};
 
 // Handle navigation - re-inject overlay if recording is active
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
-    if (changeInfo.status === 'complete' && activeRecordings[tabId]) {
+    if (changeInfo.status === 'complete' && activeRecordings['global'] && activeRecordings['global'].enableEffects) {
+        if (!tab.url || tab.url.startsWith('chrome://') || tab.url.startsWith('edge://') || tab.url.startsWith('about:')) return;
+
         // Re-inject overlay after navigation
-        if (activeRecordings[tabId].enableEffects) {
+        chrome.scripting.executeScript({
+            target: { tabId: tabId, allFrames: true },
+            func: (timestamp) => { window.recordingAddTimestamp = timestamp; },
+            args: [activeRecordings['global'].addTimestamp]
+        }).then(() => {
             chrome.scripting.executeScript({
                 target: { tabId: tabId, allFrames: true },
-                func: (timestamp) => { window.recordingAddTimestamp = timestamp; },
-                args: [activeRecordings[tabId].addTimestamp]
-            }, () => {
-                chrome.scripting.executeScript({
-                    target: { tabId: tabId, allFrames: true },
-                    files: ['scripts/content_overlay.js']
-                }).catch(err => console.log('Could not inject overlay:', err));
+                files: ['scripts/content_overlay.js']
             });
-        }
+        }).catch(err => console.log('Could not inject overlay in tab', tabId, err));
+    }
+});
+
+// Handle activating a different tab
+chrome.tabs.onActivated.addListener((activeInfo) => {
+    if (activeRecordings['global'] && activeRecordings['global'].enableEffects) {
+        chrome.tabs.get(activeInfo.tabId, (tab) => {
+            if (!tab || !tab.url || tab.url.startsWith('chrome://') || tab.url.startsWith('edge://') || tab.url.startsWith('about:')) return;
+            chrome.scripting.executeScript({
+                target: { tabId: tab.id, allFrames: true },
+                func: (timestamp) => { window.recordingAddTimestamp = timestamp; },
+                args: [activeRecordings['global'].addTimestamp]
+            }).then(() => {
+                chrome.scripting.executeScript({
+                    target: { tabId: tab.id, allFrames: true },
+                    files: ['scripts/content_overlay.js']
+                });
+            }).catch(err => console.log('Could not inject overlay in tab', tab.id, err));
+        });
     }
 });
 

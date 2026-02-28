@@ -7,6 +7,27 @@
     let highlightedElement = null;
     let renderRetryCount = 0;
 
+    function showToast(msg, isError = false) {
+        let toast = document.getElementById('__qa_standard_toast__');
+        if (!toast) {
+            toast = document.createElement('div');
+            toast.id = '__qa_standard_toast__';
+            Object.assign(toast.style, {
+                position: 'fixed', bottom: '24px', right: '24px', zIndex: '2147483647',
+                background: '#1a1a2e', color: '#fff', padding: '10px 18px', borderRadius: '10px',
+                fontSize: '13px', fontFamily: 'system-ui, sans-serif',
+                boxShadow: '0 4px 24px rgba(0,0,0,0.5)', border: '1px solid #444',
+                transition: 'opacity 0.3s', opacity: '0', pointerEvents: 'none'
+            });
+            document.body.appendChild(toast);
+        }
+        toast.style.background = isError ? '#cc2222' : '#1a1a2e';
+        toast.textContent = msg;
+        toast.style.opacity = '1';
+        clearTimeout(toast.__timeout);
+        toast.__timeout = setTimeout(() => { toast.style.opacity = '0'; }, 3000);
+    }
+
     // --- 1. Initialize CSS ---
     const style = document.createElement('style');
     style.textContent = `
@@ -175,7 +196,7 @@
     }
 
     function deleteNote(index) {
-        if (!confirm('Delete this note?')) return;
+        // Remove confirm() as per user rule: "remove alerts... dont add just show saved/deleted"
         const key = window.location.origin + window.location.pathname;
         chrome.storage.local.get(['allNotes'], (res) => {
             const allNotes = res.allNotes || {};
@@ -183,6 +204,7 @@
                 allNotes[key].splice(index, 1);
                 chrome.storage.local.set({ allNotes }, () => {
                     loadNotes();
+                    showToast('🗑️ Note deleted');
                     chrome.runtime.sendMessage({ action: 'notesUpdated' });
                 });
             }
@@ -252,8 +274,9 @@
         document.getElementById('qa-save-note').addEventListener('click', () => {
             const title = document.getElementById('qa-note-title').value.trim() || 'Note';
             const message = document.getElementById('qa-note-message').value.trim();
-            if (!message) return alert('Please enter a message');
+            if (!message) return showToast('❌ Please enter a message', true);
             saveNote({ title, message, selector });
+            showToast('✅ Note saved');
             form.remove();
         });
         document.getElementById('qa-cancel-note').addEventListener('click', () => form.remove());
