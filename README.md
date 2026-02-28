@@ -105,7 +105,7 @@ A robust, all-in-one Chrome Extension designed for QA engineers and developers. 
   - `Ctrl+Shift+F` — Fill form
   - `Ctrl+Shift+X` — Clear form
 
-### 12. � Console Error Collector
+### 12. Console Error Collector
 - **Invisible Monitoring**: Backwards-compatible interceptor catches errors even if DevTools is closed.
 - **Page Crash Detection**: Automatically logs unhandled promise rejections and JS runtime errors.
 - **Count Badges**: Real-time count of Errors, Warnings, and Info messages.
@@ -121,7 +121,7 @@ A robust, all-in-one Chrome Extension designed for QA engineers and developers. 
 - **Deduplication**: Automatically cleans your list of duplicate entries.
 
 
-## �🛠 Installation
+## 🛠 Installation
 
 1. Clone or download this repository.
 2. Open Chrome and navigate to `chrome://extensions/`.
@@ -140,4 +140,4 @@ A robust, all-in-one Chrome Extension designed for QA engineers and developers. 
 
 ## 🐛 Issues & Feedback
 Found a bug or have a feature request?
-[**Create an Issue on GitHub**](https://github.com/ruturajsharbidre/QA-Tools-kit/issues)
+[**Create an Issue on GitHub**](https://github.com/ruturajs/QA-Tools-kit/issues)
