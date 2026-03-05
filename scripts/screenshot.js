@@ -1,6 +1,28 @@
 (function () {
-    if (window.hasScreenshotRun) return;
+    if (document.getElementById('__qa_screenshot_overlay__')) return;
     window.hasScreenshotRun = true;
+
+    function showToast(msg) {
+        let toast = document.getElementById('__qa_standard_toast__');
+        if (!toast) {
+            toast = document.createElement('div');
+            toast.id = '__qa_standard_toast__';
+            Object.assign(toast.style, {
+                position: 'fixed', bottom: '24px', right: '24px', zIndex: '2147483647',
+                background: '#1a1a2e', color: '#fff', padding: '10px 18px', borderRadius: '10px',
+                fontSize: '13px', fontFamily: 'system-ui, sans-serif',
+                boxShadow: '0 4px 24px rgba(0,0,0,0.5)', border: '1px solid #444',
+                transition: 'opacity 0.3s', opacity: '0', pointerEvents: 'none'
+            });
+            document.body.appendChild(toast);
+        }
+        toast.textContent = msg;
+        toast.style.opacity = '1';
+        clearTimeout(toast.__timeout);
+        toast.__timeout = setTimeout(() => { toast.style.opacity = '0'; }, 3000);
+    }
+
+    showToast("✂️ Selection Mode: Drag to select area");
 
     let startX, startY;
     let isSelecting = false;
@@ -9,12 +31,13 @@
     let buttonContainer;
     let annotationCanvas;
     let ctx;
-    let capturedImage; // Stores the cropped image for annotation
+    let capturedImage;
 
     function createOverlay() {
         if (overlay) return;
 
         overlay = document.createElement('div');
+        overlay.id = '__qa_screenshot_overlay__';
         overlay.style.position = 'fixed';
         overlay.style.top = '0';
         overlay.style.left = '0';
@@ -61,8 +84,8 @@
             e.preventDefault();
             const rect = selectionBox.getBoundingClientRect();
             if (rect.width > 0 && rect.height > 0) {
-                // Use existing logic if buttonContainer is present, or just process
-                processCapture(rect, 'copy');
+                // Corrected: use finishCapture instead of undefined processCapture
+                finishCapture(rect, 'copy');
             }
         }
     }

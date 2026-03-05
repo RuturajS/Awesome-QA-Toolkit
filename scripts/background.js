@@ -24,7 +24,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     }
 
     // Recording session management
-    if (request.action === 'initGlobalRecording' || request.action === 'recordingStarted') {
+    if (request.action === 'recordingStarted') {
         const tabId = request.tabId || sender.tab?.id;
         if (!tabId) return;
 
@@ -89,6 +89,19 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             chrome.storage.local.set({ matchLogs: logs.slice(0, 100) });
         });
     }
+
+    if (request.action === "fullPageDataReady") {
+        // Find which task this belongs to (usually the one with this tabId)
+        chrome.storage.local.get(['autoTasks'], (res) => {
+            const tasks = res.autoTasks || [];
+            // sender.tab.id might be missing if sent from popup, but here it's from content script
+            const tabId = sender.tab ? sender.tab.id : null;
+            const task = tasks.find(t => t.tabId === tabId && t.isFullPage);
+            const folder = task ? task.folder : 'QA-Screenshots';
+            saveScreenshot(request.dataUrl, folder);
+        });
+        return true;
+    }
 });
 
 chrome.commands.onCommand.addListener((command) => {
@@ -97,7 +110,7 @@ chrome.commands.onCommand.addListener((command) => {
             if (tabs[0]) {
                 chrome.scripting.executeScript({
                     target: { tabId: tabs[0].id },
-                    files: ['scripts/screenshot.js']
+                    files: ['scripts/visible_screenshot.js']
                 });
             }
         });
@@ -172,48 +185,75 @@ async function handleAutoScreenshot(taskId) {
 
         const task = tasks[taskIdx];
 
-        // Capture visible tab (current active tab)
-        chrome.tabs.captureVisibleTab(null, { format: 'png' }, (dataUrl) => {
-            if (chrome.runtime.lastError || !dataUrl) {
-                const errorMsg = chrome.runtime.lastError ? chrome.runtime.lastError.message : 'Failed to capture tab';
-                console.error('AutoShot failed:', errorMsg);
-                // Store error for UI feedback
-                chrome.storage.local.set({ lastAutoError: errorMsg });
-            } else {
-                const timestamp = new Date().toISOString().replace(/[:.]/g, '-').split('.')[0]; // Cleaner timestamp
-                const filename = `${task.folder}/shot-${timestamp}.png`;
-
-                chrome.downloads.download({
-                    url: dataUrl,
-                    filename: filename,
-                    conflictAction: 'uniquify',
-                    saveAs: false
-                }, (downloadId) => {
-                    if (downloadId) {
-                        chrome.notifications.create({
-                            type: 'basic',
-                            iconUrl: '/icons/icon128.png',
-                            title: 'Screenshot Captured',
-                            message: `Saved to: /${filename}`,
-                            priority: 0
-                        });
-                    }
+        if (task.isFullPage && task.tabId) {
+            // Full Page Scrolling mode
+            chrome.scripting.executeScript({
+                target: { tabId: task.tabId },
+                func: () => { window.fullPageAutoCapture = true; }
+            }, () => {
+                chrome.scripting.executeScript({
+                    target: { tabId: task.tabId },
+                    files: ['scripts/full_page_screenshot.js']
                 });
-            }
+            });
 
-            if (task.type === 'interval') {
-                task.remainingCount--;
-                if (task.remainingCount > 0) {
-                    // Schedule next shot
-                    chrome.alarms.create(task.id, { when: Date.now() + (task.interval * 1000) });
+            // Advance task counter now, or wait for ready?
+            // To keep it simple and handle sequential shots, we'll advance it
+            advanceTask(tasks, taskIdx);
+        } else {
+            // Capture visible tab (current active tab)
+            chrome.tabs.captureVisibleTab(null, { format: 'png' }, (dataUrl) => {
+                if (chrome.runtime.lastError || !dataUrl) {
+                    const errorMsg = chrome.runtime.lastError ? chrome.runtime.lastError.message : 'Failed to capture tab';
+                    console.error('AutoShot failed:', errorMsg);
+                    chrome.storage.local.set({ lastAutoError: errorMsg });
                 } else {
-                    tasks.splice(taskIdx, 1);
+                    saveScreenshot(dataUrl, task.folder);
                 }
-            } else {
-                tasks.splice(taskIdx, 1);
-            }
-            chrome.storage.local.set({ autoTasks: tasks });
-        });
+                advanceTask(tasks, taskIdx);
+            });
+        }
     });
 }
+
+function advanceTask(tasks, taskIdx) {
+    const task = tasks[taskIdx];
+    if (task.type === 'interval') {
+        task.remainingCount--;
+        if (task.remainingCount > 0) {
+            chrome.alarms.create(task.id, { when: Date.now() + (task.interval * 1000) });
+        } else {
+            tasks.splice(taskIdx, 1);
+        }
+    } else {
+        tasks.splice(taskIdx, 1);
+    }
+    chrome.storage.local.set({ autoTasks: tasks });
+}
+
+function saveScreenshot(dataUrl, folder) {
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-').split('.')[0];
+    const filename = `${folder}/shot-${timestamp}.png`;
+
+    chrome.downloads.download({
+        url: dataUrl,
+        filename: filename,
+        conflictAction: 'uniquify',
+        saveAs: false
+    }, (downloadId) => {
+        if (downloadId) {
+            chrome.notifications.create({
+                type: 'basic',
+                iconUrl: '/icons/icon128.png',
+                title: 'Screenshot Captured',
+                message: `Saved to: /${filename}`,
+                priority: 0
+            });
+        }
+    });
+}
+
+// Add this to the existing onMessage listener in background.js
+// Removed duplicate onMessage listener from here
+
 

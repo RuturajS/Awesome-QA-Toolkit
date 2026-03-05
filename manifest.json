@@ -72,7 +72,9 @@
         "scripts/note_tagger.js",
         "scripts/form_filler.js",
         "scripts/console_collector.js",
-        "scripts/whole_screen_screenshot.js"
+        "scripts/whole_screen_screenshot.js",
+        "scripts/full_page_screenshot.js",
+        "scripts/visible_screenshot.js"
       ],
       "matches": [
         "<all_urls>"

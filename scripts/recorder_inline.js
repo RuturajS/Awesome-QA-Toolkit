@@ -71,8 +71,14 @@
 
         } catch (err) {
             console.error("Error starting recording:", err);
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+            }
             showToast('❌ Failed to start recording: ' + err.message, true);
             window.hasRecorderRun = false;
+
+            // Notify background to clear any state (just in case)
+            chrome.runtime.sendMessage({ action: 'recordingStopped' });
         }
     }
 
