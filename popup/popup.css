@@ -115,6 +115,12 @@ h1::before {
 .tool-btn:hover {
     border-color: var(--primary);
     background-color: var(--surface);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.tool-btn:active {
+    transform: translateY(0);
 }
 
 .tool-btn span {

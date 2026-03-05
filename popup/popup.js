@@ -82,7 +82,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // --- Settings Persistence ---
-    const settingsKeys = ['screenshotTimestamp', 'annotateRecord', 'recordingTimestamp', 'captureWholeScreen'];
+    const settingsKeys = ['screenshotTimestamp', 'annotateRecord', 'recordingTimestamp'];
 
     chrome.storage.sync.get(settingsKeys, (result) => {
         settingsKeys.forEach(key => {
@@ -103,13 +103,13 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // --- Tool Handlers ---
-    if (document.getElementById('screenshotBtn')) {
-        document.getElementById('screenshotBtn').addEventListener('click', async () => {
-            const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-            const addTimestamp = document.getElementById('screenshotTimestamp').checked;
-            const fullScreen = document.getElementById('captureWholeScreen').checked;
 
+    // 1. Full Page (Scrolling - No Prompt)
+    if (document.getElementById('fullPageBtn')) {
+        document.getElementById('fullPageBtn').addEventListener('click', async () => {
+            const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
             if (tab) {
+                const addTimestamp = document.getElementById('screenshotTimestamp').checked;
                 chrome.scripting.executeScript({
                     target: { tabId: tab.id },
                     func: (timestamp) => { window.screenshotAddTimestamp = timestamp; },
@@ -117,7 +117,70 @@ document.addEventListener('DOMContentLoaded', () => {
                 }, () => {
                     chrome.scripting.executeScript({
                         target: { tabId: tab.id },
-                        files: [fullScreen ? 'scripts/whole_screen_screenshot.js' : 'scripts/screenshot.js']
+                        files: ['scripts/full_page_screenshot.js']
+                    });
+                });
+                window.close();
+            }
+        });
+    }
+
+    // 2. Visible Area (One Click - No Prompt)
+    if (document.getElementById('visibleBtn')) {
+        document.getElementById('visibleBtn').addEventListener('click', async () => {
+            const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+            if (tab) {
+                const addTimestamp = document.getElementById('screenshotTimestamp').checked;
+                chrome.scripting.executeScript({
+                    target: { tabId: tab.id },
+                    func: (timestamp) => { window.screenshotAddTimestamp = timestamp; },
+                    args: [addTimestamp]
+                }, () => {
+                    chrome.scripting.executeScript({
+                        target: { tabId: tab.id },
+                        files: ['scripts/visible_screenshot.js']
+                    });
+                });
+                window.close();
+            }
+        });
+    }
+
+    // 3. Selection (Always Drappable Box)
+    if (document.getElementById('screenshotBtn')) {
+        document.getElementById('screenshotBtn').addEventListener('click', async () => {
+            const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+            if (tab) {
+                const addTimestamp = document.getElementById('screenshotTimestamp').checked;
+                chrome.scripting.executeScript({
+                    target: { tabId: tab.id },
+                    func: (timestamp) => { window.screenshotAddTimestamp = timestamp; },
+                    args: [addTimestamp]
+                }, () => {
+                    chrome.scripting.executeScript({
+                        target: { tabId: tab.id },
+                        files: ['scripts/screenshot.js']
+                    });
+                });
+                window.close();
+            }
+        });
+    }
+
+    // 4. Desktop (Entire OS - Prompts)
+    if (document.getElementById('desktopBtn')) {
+        document.getElementById('desktopBtn').addEventListener('click', async () => {
+            const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+            if (tab) {
+                const addTimestamp = document.getElementById('screenshotTimestamp').checked;
+                chrome.scripting.executeScript({
+                    target: { tabId: tab.id },
+                    func: (timestamp) => { window.screenshotAddTimestamp = timestamp; },
+                    args: [addTimestamp]
+                }, () => {
+                    chrome.scripting.executeScript({
+                        target: { tabId: tab.id },
+                        files: ['scripts/whole_screen_screenshot.js']
                     });
                 });
                 window.close();
@@ -145,14 +208,6 @@ document.addEventListener('DOMContentLoaded', () => {
                         target: { tabId: tab.id },
                         files: ['scripts/recorder_inline.js']
                     });
-                });
-
-                // Inform background script to globally mark recording as active
-                chrome.runtime.sendMessage({
-                    action: 'initGlobalRecording',
-                    tabId: tab.id,
-                    enableEffects: enableEffects,
-                    addTimestamp: addTimestamp
                 });
 
                 window.close();
@@ -545,6 +600,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const count = parseInt(document.getElementById('shotCount').value);
         const folder = document.getElementById('autoShotFolder').value.trim() || 'QA-Screenshots';
         const isFullScreen = document.getElementById('fullScreenCapture').checked;
+        const isFullPage = document.getElementById('fullPageCapture').checked;
+        const isVisible = document.getElementById('visibleCapture').checked;
 
         if (isNaN(interval) || interval < 5) { showStatus('Interval must be at least 5 seconds', true); return; }
         if (isNaN(count) || count < 1) { showStatus('Count must be at least 1', true); return; }
@@ -558,14 +615,14 @@ document.addEventListener('DOMContentLoaded', () => {
                     showStatus('Permission to capture screen was denied.');
                     return;
                 }
-                startAutoShotTask(interval, count, folder, true, streamId);
+                startAutoShotTask(interval, count, folder, true, false, false, streamId);
             });
         } else {
-            startAutoShotTask(interval, count, folder, false, null);
+            startAutoShotTask(interval, count, folder, false, isFullPage, isVisible, null);
         }
     });
 
-    async function startAutoShotTask(interval, count, folder, isFullScreen, streamId) {
+    async function startAutoShotTask(interval, count, folder, isFullScreen, isFullPage, isVisible, streamId) {
         let tab = null;
         if (!isFullScreen) {
             [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
@@ -585,6 +642,8 @@ document.addEventListener('DOMContentLoaded', () => {
             tabId: tab ? tab.id : null,
             tabUrl: tab ? tab.url : 'Full Desktop Screen',
             isFullScreen: isFullScreen,
+            isFullPage: isFullPage,
+            isVisible: isVisible,
             streamId: streamId,
             startTime: Date.now()
         };

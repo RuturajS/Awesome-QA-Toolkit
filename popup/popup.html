@@ -17,28 +17,30 @@
         </div>
 
         <div class="tools-section">
-            <button id="screenshotBtn" class="tool-btn" title="Capture Screenshot"><span>📸</span> Screen</button>
+            <button id="fullPageBtn" class="tool-btn" title="Full Page (Scrolling - No Prompt)"><span>📄</span> Full
+                Page</button>
+            <button id="visibleBtn" class="tool-btn" title="Visible Area (One Click - No Prompt)"><span>🖼️</span>
+                Visible</button>
+            <button id="screenshotBtn" class="tool-btn" title="Manual Selection Tool (Selection Box)"><span>✂️</span>
+                Selection</button>
+            <button id="desktopBtn" class="tool-btn" title="Desktop/Window Capture (Prompts)"><span>🖥️</span>
+                Desktop</button>
             <button id="recordBtn" class="tool-btn" title="Start Screen Recording"><span>🎥</span> Record</button>
             <button id="measureBtn" class="tool-btn" title="Measure Elements & Distances"><span>📏</span>
                 Measure</button>
             <button id="schedulerBtn" class="tool-btn" title="Schedule URLs to Open"><span>⏰</span> Scheduler</button>
-            <button id="extractUrlsBtn" class="tool-btn" title="Extract All URLs"><span>🔗</span> Extract URLs</button>
+            <button id="extractUrlsBtn" class="tool-btn" title="Extract All URLs"><span>🔗</span> Extractor</button>
             <button id="autoScreenshotBtn" class="tool-btn" title="Automated Screenshots"><span>📸</span> Auto
                 Shot</button>
-            <button id="keywordSpotterBtn" class="tool-btn" title="Find & Highlight Content"><span>🔍</span> Keyword
+            <button id="keywordSpotterBtn" class="tool-btn" title="Find & Highlight Content"><span>🔍</span>
                 Spotter</button>
-            <button id="noteTaggerBtn" class="tool-btn" title="Tag Elements with Notes"><span>📌</span> Note
-                Tagger</button>
-            <button id="cookieManagerBtn" class="tool-btn" title="Manage Cookies &amp; Local Storage"><span>🍪</span>
-                Cookie
-                Manager</button>
-            <button id="formFillerBtn" class="tool-btn" title="Form Autofill / Test Data Generator"><span>🧩</span> Form
-                Filler</button>
-            <button id="consoleCollectorBtn" class="tool-btn"
-                title="Capture JS Console Errors &amp; Warnings"><span>🚨</span> Console
-                Errors</button>
-            <button id="bulkUrlOpenerBtn" class="tool-btn" title="Bulk URL Opener"><span>🌐</span> Bulk URL
-                Opener</button>
+            <button id="noteTaggerBtn" class="tool-btn" title="Tag Elements with Notes"><span>📌</span> Notes</button>
+            <button id="cookieManagerBtn" class="tool-btn" title="Manage Cookies &amp; Storage"><span>🍪</span>
+                Cookies</button>
+            <button id="formFillerBtn" class="tool-btn" title="Form Autofill / Data Gen"><span>🧩</span> Forms</button>
+            <button id="consoleCollectorBtn" class="tool-btn" title="Capture JS Console Errors"><span>🚨</span>
+                Console</button>
+            <button id="bulkUrlOpenerBtn" class="tool-btn" title="Bulk URL Opener"><span>🌐</span> Bulk</button>
         </div>
 
         <div class="settings-section">
@@ -48,15 +50,11 @@
             </div>
             <div class="setting-item">
                 <input type="checkbox" id="annotateRecord" checked>
-                <label for="annotateRecord">Highlight cursor & clicks in recording</label>
+                <label for="annotateRecord">Highlight clicks in recording</label>
             </div>
             <div class="setting-item">
                 <input type="checkbox" id="recordingTimestamp" checked>
-                <label for="recordingTimestamp">Add timestamp overlay to recording</label>
-            </div>
-            <div class="setting-item">
-                <input type="checkbox" id="captureWholeScreen">
-                <label for="captureWholeScreen">Capture entire screen (Desktop/OS)</label>
+                <label for="recordingTimestamp">Add timestamp to recording</label>
             </div>
         </div>
 
@@ -236,10 +234,17 @@
 
         <!-- Interval Mode -->
         <div id="intervalForm">
+            <div class="setting-item" style="margin-bottom: 5px;">
+                <input type="checkbox" id="visibleCapture" checked>
+                <label for="visibleCapture"><b>Visible Area</b> (Single Click - No Prompt)</label>
+            </div>
+            <div class="setting-item" style="margin-bottom: 5px;">
+                <input type="checkbox" id="fullPageCapture">
+                <label for="fullPageCapture"><b>Full Page</b> (Scrolling - No Prompt)</label>
+            </div>
             <div class="setting-item" style="margin-bottom: 15px;">
                 <input type="checkbox" id="fullScreenCapture">
-                <label for="fullScreenCapture"><b>Capture Entire Desktop</b> (Will prompt once for screen
-                    permission)</label>
+                <label for="fullScreenCapture"><b>Entire Desktop/OS</b> (Picker PROMPT)</label>
             </div>
             <div class="time-inputs">
                 <div>

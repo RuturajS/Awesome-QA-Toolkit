@@ -1,5 +1,7 @@
 # QA Tool Kit Extension
 
+<img width="343" height="494" alt="image" src="https://github.com/user-attachments/assets/0c7cf67d-2097-4033-a0d8-769ed5f4d512" />
+
 A robust, all-in-one Chrome Extension designed for QA engineers and developers. It provides one-click page scanning, screenshot annotation, and screen recording capabilities in a minimal, compact interface.
 
 ## 🚀 Features
