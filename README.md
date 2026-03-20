@@ -5,7 +5,14 @@
 
 A robust, all-in-one Chrome Extension designed for QA engineers and developers. It provides one-click page scanning, screenshot annotation, and screen recording capabilities in a minimal, compact interface.
 
+## 🔗 Quick Links
+- [**📂 GitHub Repository**](https://github.com/RuturajS/Awesome-QA-Toolkit)
+- [**🐛 Report an Issue**](https://github.com/RuturajS/Awesome-QA-Toolkit/issues)
+- [**📥 View Releases**](https://github.com/RuturajS/Awesome-QA-Toolkit/releases)
+- [**📜 License Terms**](LICENSE.md)
+
 ## 🚀 Features
+
 
 ### 1. 🔍 One-Click Page Scanner
 - Instantly analyzes the current page for:
@@ -144,3 +151,6 @@ A robust, all-in-one Chrome Extension designed for QA engineers and developers. 
 ## 🐛 Issues & Feedback
 Found a bug or have a feature request?
 [**Create an Issue on GitHub**](https://github.com/RuturajS/Awesome-QA-Toolkit/issues)
+
+## 📜 License
+This software is provided under a custom license. **Modification is not allowed**, but reporting bugs and providing feedback is encouraged. See [LICENSE.md](LICENSE.md) for full details.
