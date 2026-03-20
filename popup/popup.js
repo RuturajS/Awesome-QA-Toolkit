@@ -261,13 +261,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    if (document.getElementById('keywordSpotterBtn')) {
-        document.getElementById('keywordSpotterBtn').addEventListener('click', () => {
-            switchView('keywordSpotterView');
-            loadMatchLogs();
-        });
-    }
-
     if (document.getElementById('cookieManagerBtn')) {
         document.getElementById('cookieManagerBtn').addEventListener('click', () => {
             switchView('cookieManagerView');
