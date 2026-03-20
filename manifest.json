@@ -38,10 +38,6 @@
     }
   },
   "background": {
-    "scripts": [
-      "scripts/browser_polyfill.js",
-      "scripts/background.js"
-    ],
     "service_worker": "scripts/background.js"
   },
   "browser_specific_settings": {
