@@ -23,7 +23,7 @@
         toast.__timeout = setTimeout(() => { toast.style.opacity = '0'; }, 3000);
     }
 
-    chrome.runtime.sendMessage({ action: "captureVisibleTab" }, (response) => {
+    browser.runtime.sendMessage({ action: "captureVisibleTab" }, (response) => {
         if (response && response.dataUrl) {
             // Add timestamp if enabled (shared windows variable)
             if (window.screenshotAddTimestamp !== false) {

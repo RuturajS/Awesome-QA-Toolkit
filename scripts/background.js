@@ -1,8 +1,15 @@
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+try {
+    importScripts('browser_polyfill.js');
+} catch (e) {
+    console.log('importScripts failing (could be non-worker context):', e);
+}
+
+browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
+
     if (request.action === "captureVisibleTab") {
-        chrome.tabs.captureVisibleTab(null, { format: "png" }, (dataUrl) => {
-            if (chrome.runtime.lastError) {
-                sendResponse({ error: chrome.runtime.lastError.message });
+        browser.tabs.captureVisibleTab(null, { format: "png" }, (dataUrl) => {
+            if (browser.runtime.lastError) {
+                sendResponse({ error: browser.runtime.lastError.message });
             } else {
                 sendResponse({ dataUrl: dataUrl });
             }
@@ -12,7 +19,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
     if (request.action === 'showUrlExtractor') {
         // Store URL data
-        chrome.storage.local.set({
+        browser.storage.local.set({
             extractedUrls: {
                 urls: request.urls,
                 pageUrl: request.pageUrl,
@@ -36,19 +43,19 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
         // Inject overlay into ALL tabs if effects are enabled
         if (request.enableEffects) {
-            chrome.tabs.query({}, (tabs) => {
+            browser.tabs.query({}, (tabs) => {
                 tabs.forEach((tab) => {
                     // Skip chrome:// URLs and similar protected pages
                     if (!tab.url || tab.url.startsWith('chrome://') || tab.url.startsWith('edge://') || tab.url.startsWith('about:')) return;
 
-                    chrome.scripting.executeScript({
+                    browser.scripting.executeScript({
                         target: { tabId: tab.id, allFrames: true },
                         func: (timestamp) => { window.recordingAddTimestamp = timestamp; },
                         args: [request.addTimestamp]
                     }).then(() => {
-                        chrome.scripting.executeScript({
+                        browser.scripting.executeScript({
                             target: { tabId: tab.id, allFrames: true },
-                            files: ['scripts/content_overlay.js']
+                            files: ['scripts/browser_polyfill.js', 'scripts/content_overlay.js']
                         });
                     }).catch(err => console.log('Could not inject overlay in tab', tab.id, err));
                 });
@@ -60,15 +67,15 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         delete activeRecordings['global'];
 
         // Remove overlays from ALL tabs
-        chrome.tabs.query({}, (tabs) => {
+        browser.tabs.query({}, (tabs) => {
             tabs.forEach((tab) => {
-                chrome.tabs.sendMessage(tab.id, { action: 'stopOverlay' }).catch(() => { });
+                browser.tabs.sendMessage(tab.id, { action: 'stopOverlay' }).catch(() => { });
             });
         });
     }
 
     if (request.action === 'keywordMatchFound') {
-        chrome.notifications.create({
+        browser.notifications.create({
             type: 'basic',
             iconUrl: '/icons/icon128.png',
             title: 'Keyword Spotted!',
@@ -77,7 +84,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         });
 
         // Log to storage
-        chrome.storage.local.get(['matchLogs'], (res) => {
+        browser.storage.local.get(['matchLogs'], (res) => {
             const logs = res.matchLogs || [];
             logs.unshift({
                 id: 'match_' + Date.now(),
@@ -86,13 +93,13 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                 url: request.url,
                 timestamp: new Date().toLocaleString()
             });
-            chrome.storage.local.set({ matchLogs: logs.slice(0, 100) });
+            browser.storage.local.set({ matchLogs: logs.slice(0, 100) });
         });
     }
 
     if (request.action === "fullPageDataReady") {
         // Find which task this belongs to (usually the one with this tabId)
-        chrome.storage.local.get(['autoTasks'], (res) => {
+        browser.storage.local.get(['autoTasks'], (res) => {
             const tasks = res.autoTasks || [];
             // sender.tab.id might be missing if sent from popup, but here it's from content script
             const tabId = sender.tab ? sender.tab.id : null;
@@ -104,13 +111,13 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     }
 });
 
-chrome.commands.onCommand.addListener((command) => {
+browser.commands.onCommand.addListener((command) => {
     if (command === "take_screenshot") {
-        chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+        browser.tabs.query({ active: true, currentWindow: true }, (tabs) => {
             if (tabs[0]) {
-                chrome.scripting.executeScript({
+                browser.scripting.executeScript({
                     target: { tabId: tabs[0].id },
-                    files: ['scripts/visible_screenshot.js']
+                    files: ['scripts/browser_polyfill.js', 'scripts/visible_screenshot.js']
                 });
             }
         });
@@ -121,37 +128,37 @@ chrome.commands.onCommand.addListener((command) => {
 let activeRecordings = {};
 
 // Handle navigation - re-inject overlay if recording is active
-chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+browser.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
     if (changeInfo.status === 'complete' && activeRecordings['global'] && activeRecordings['global'].enableEffects) {
         if (!tab.url || tab.url.startsWith('chrome://') || tab.url.startsWith('edge://') || tab.url.startsWith('about:')) return;
 
         // Re-inject overlay after navigation
-        chrome.scripting.executeScript({
+        browser.scripting.executeScript({
             target: { tabId: tabId, allFrames: true },
             func: (timestamp) => { window.recordingAddTimestamp = timestamp; },
             args: [activeRecordings['global'].addTimestamp]
         }).then(() => {
-            chrome.scripting.executeScript({
+            browser.scripting.executeScript({
                 target: { tabId: tabId, allFrames: true },
-                files: ['scripts/content_overlay.js']
+                files: ['scripts/browser_polyfill.js', 'scripts/content_overlay.js']
             });
         }).catch(err => console.log('Could not inject overlay in tab', tabId, err));
     }
 });
 
 // Handle activating a different tab
-chrome.tabs.onActivated.addListener((activeInfo) => {
+browser.tabs.onActivated.addListener((activeInfo) => {
     if (activeRecordings['global'] && activeRecordings['global'].enableEffects) {
-        chrome.tabs.get(activeInfo.tabId, (tab) => {
+        browser.tabs.get(activeInfo.tabId, (tab) => {
             if (!tab || !tab.url || tab.url.startsWith('chrome://') || tab.url.startsWith('edge://') || tab.url.startsWith('about:')) return;
-            chrome.scripting.executeScript({
+            browser.scripting.executeScript({
                 target: { tabId: tab.id, allFrames: true },
                 func: (timestamp) => { window.recordingAddTimestamp = timestamp; },
                 args: [activeRecordings['global'].addTimestamp]
             }).then(() => {
-                chrome.scripting.executeScript({
+                browser.scripting.executeScript({
                     target: { tabId: tab.id, allFrames: true },
-                    files: ['scripts/content_overlay.js']
+                    files: ['scripts/browser_polyfill.js', 'scripts/content_overlay.js']
                 });
             }).catch(err => console.log('Could not inject overlay in tab', tab.id, err));
         });
@@ -159,15 +166,15 @@ chrome.tabs.onActivated.addListener((activeInfo) => {
 });
 
 // Handle alarms (URL Scheduling & Auto Screenshots)
-chrome.alarms.onAlarm.addListener((alarm) => {
+browser.alarms.onAlarm.addListener((alarm) => {
     if (alarm.name.startsWith('schedule_')) {
-        chrome.storage.local.get(['schedules'], (result) => {
+        browser.storage.local.get(['schedules'], (result) => {
             const schedules = result.schedules || [];
             const schedule = schedules.find(s => s.id === alarm.name);
             if (schedule) {
-                chrome.tabs.create({ url: schedule.url });
+                browser.tabs.create({ url: schedule.url });
                 const updatedSchedules = schedules.filter(s => s.id !== alarm.name);
-                chrome.storage.local.set({ schedules: updatedSchedules });
+                browser.storage.local.set({ schedules: updatedSchedules });
             }
         });
     }
@@ -178,7 +185,7 @@ chrome.alarms.onAlarm.addListener((alarm) => {
 });
 
 async function handleAutoScreenshot(taskId) {
-    chrome.storage.local.get(['autoTasks'], async (res) => {
+    browser.storage.local.get(['autoTasks'], async (res) => {
         let tasks = res.autoTasks || [];
         const taskIdx = tasks.findIndex(t => t.id === taskId);
         if (taskIdx === -1) return;
@@ -187,13 +194,13 @@ async function handleAutoScreenshot(taskId) {
 
         if (task.isFullPage && task.tabId) {
             // Full Page Scrolling mode
-            chrome.scripting.executeScript({
+            browser.scripting.executeScript({
                 target: { tabId: task.tabId },
                 func: () => { window.fullPageAutoCapture = true; }
             }, () => {
-                chrome.scripting.executeScript({
+                browser.scripting.executeScript({
                     target: { tabId: task.tabId },
-                    files: ['scripts/full_page_screenshot.js']
+                    files: ['scripts/browser_polyfill.js', 'scripts/full_page_screenshot.js']
                 });
             });
 
@@ -202,11 +209,11 @@ async function handleAutoScreenshot(taskId) {
             advanceTask(tasks, taskIdx);
         } else {
             // Capture visible tab (current active tab)
-            chrome.tabs.captureVisibleTab(null, { format: 'png' }, (dataUrl) => {
-                if (chrome.runtime.lastError || !dataUrl) {
-                    const errorMsg = chrome.runtime.lastError ? chrome.runtime.lastError.message : 'Failed to capture tab';
+            browser.tabs.captureVisibleTab(null, { format: 'png' }, (dataUrl) => {
+                if (browser.runtime.lastError || !dataUrl) {
+                    const errorMsg = browser.runtime.lastError ? browser.runtime.lastError.message : 'Failed to capture tab';
                     console.error('AutoShot failed:', errorMsg);
-                    chrome.storage.local.set({ lastAutoError: errorMsg });
+                    browser.storage.local.set({ lastAutoError: errorMsg });
                 } else {
                     saveScreenshot(dataUrl, task.folder);
                 }
@@ -221,28 +228,28 @@ function advanceTask(tasks, taskIdx) {
     if (task.type === 'interval') {
         task.remainingCount--;
         if (task.remainingCount > 0) {
-            chrome.alarms.create(task.id, { when: Date.now() + (task.interval * 1000) });
+            browser.alarms.create(task.id, { when: Date.now() + (task.interval * 1000) });
         } else {
             tasks.splice(taskIdx, 1);
         }
     } else {
         tasks.splice(taskIdx, 1);
     }
-    chrome.storage.local.set({ autoTasks: tasks });
+    browser.storage.local.set({ autoTasks: tasks });
 }
 
 function saveScreenshot(dataUrl, folder) {
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-').split('.')[0];
     const filename = `${folder}/shot-${timestamp}.png`;
 
-    chrome.downloads.download({
+    browser.downloads.download({
         url: dataUrl,
         filename: filename,
         conflictAction: 'uniquify',
         saveAs: false
     }, (downloadId) => {
         if (downloadId) {
-            chrome.notifications.create({
+            browser.notifications.create({
                 type: 'basic',
                 iconUrl: '/icons/icon128.png',
                 title: 'Screenshot Captured',

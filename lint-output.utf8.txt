@@ -1,0 +1,46 @@
+﻿Validation Summary:
+
+errors          1              
+notices         0              
+warnings        3              
+
+ERRORS:
+
+Code                     Message       Description              File          
+MANIFEST_FIELD_INVALID   "/browser_ÔÇª   See                      manifest.jÔÇª   
+                         specific_sÔÇª   https://mzl.la/1ZOhoEN   son           
+                         ettings/geÔÇª   (MDN Docs) for more                    
+                         cko/data_cÔÇª   information.                           
+                         ollection_ÔÇª                                          
+                         permissionÔÇª                                          
+                         s" must be                                           
+                         object                                               
+WARNINGS:
+
+Code                                Message       Description              Fil
+MANIFEST_PERMISSIONS                /permissioÔÇª   See                      man
+                                    ns: Invalid   https://mzl.la/1R1n1t0   son
+                                    permissions   (MDN Docs) for more         
+                                    "desktopCaÔÇª   information.                
+                                    pture" at                                 
+                                    8.                                        
+MANIFEST_PERMISSIONS                /permissioÔÇª   See                      man
+                                    ns: Invalid   https://mzl.la/1R1n1t0   son
+                                    permissions   (MDN Docs) for more         
+                                    "offscreen"   information.                
+                                    at 9.                                     
+BACKGROUND_SERVICE_WORKER_IGNORED   Unsupported   The                      man
+                                    "/backgrouÔÇª   "/background/service_ÔÇª   son
+                                    nd/serviceÔÇª   worker" manifest            
+                                    _worker"      property is                 
+                                    manifest      unsupported and             
+                                    property is   ignored on Firefox.         
+                                    ignored by    Please make sure            
+                                    Firefox.      "/background/scripts"       
+                                                  or "/background/page"       
+                                                  properties are              
+                                                  providing appropriate       
+                                                  Firefox compatibility.      
+                                                  See                         
+                                                  https://mzl.la/4r6SF1L      
+                                                  for more information.       

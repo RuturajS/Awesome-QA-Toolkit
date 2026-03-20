@@ -10,7 +10,7 @@
     console.log('URL Extractor: Found', urls.all.length, 'URLs');
 
     // Send to background for display
-    chrome.runtime.sendMessage({
+    browser.runtime.sendMessage({
         action: 'showUrlExtractor',
         urls: urls,
         pageUrl: window.location.href,

@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "QA Tool Kit",
-  "version": "1.0",
+  "version": "2.0",
   "description": "One-click QA page scanning for broken links, images, and performance issues.",
   "author": "Ruturaj Sharbidre",
   "permissions": [
@@ -38,7 +38,22 @@
     }
   },
   "background": {
+    "scripts": [
+      "scripts/browser_polyfill.js",
+      "scripts/background.js"
+    ],
     "service_worker": "scripts/background.js"
+  },
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "qa-toolkit@ruturajsh.com",
+      "strict_min_version": "115.0",
+      "data_collection_permissions": {
+        "required": [
+          "none"
+        ]
+      }
+    }
   },
   "icons": {
     "16": "icons/icon16.png",
@@ -51,6 +66,7 @@
         "<all_urls>"
       ],
       "js": [
+        "scripts/browser_polyfill.js",
         "scripts/keyword_spotter.js",
         "scripts/note_tagger.js"
       ],
@@ -61,6 +77,7 @@
     {
       "resources": [
         "pages/recorder_helper.html",
+        "scripts/browser_polyfill.js",
         "scripts/recorder.js",
         "scripts/screenshot.js",
         "scripts/scanner.js",

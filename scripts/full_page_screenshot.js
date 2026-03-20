@@ -40,7 +40,7 @@
                 await new Promise(r => setTimeout(r, 300));
 
                 const response = await new Promise(resolve => {
-                    chrome.runtime.sendMessage({ action: "captureVisibleTab" }, resolve);
+                    browser.runtime.sendMessage({ action: "captureVisibleTab" }, resolve);
                 });
 
                 if (response && response.dataUrl) {
@@ -91,7 +91,7 @@
             const dataUrl = canvas.toDataURL('image/png');
 
             if (window.fullPageAutoCapture) {
-                chrome.runtime.sendMessage({
+                browser.runtime.sendMessage({
                     action: "fullPageDataReady",
                     dataUrl: dataUrl
                 });

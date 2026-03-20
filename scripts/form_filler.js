@@ -12,8 +12,8 @@
 
     // ─── Data Generators ────────────────────────────────────────────────────────
 
-    const FIRST_NAMES = ['Alice', 'Bob', 'Charlie', 'Diana', 'Ethan', 'Fiona', 'George', 'Hannah', 'Ivan', 'Julia', 'Kevin', 'Laura', 'Mike', 'Nancy', 'Oscar', 'Priya', 'Quinn', 'Rachel', 'Sam', 'Tina'];
-    const LAST_NAMES = ['Smith', 'Johnson', 'Williams', 'Brown', 'Jones', 'Garcia', 'Miller', 'Davis', 'Wilson', 'Moore', 'Taylor', 'Anderson', 'Thomas', 'Jackson', 'White', 'Harris', 'Martin', 'Thompson', 'Lee', 'Patel'];
+    const FIRST_NAMES = ['Alice', 'Bob', 'Charlie', 'Ruturaj', 'Ethan', 'Fiona', 'George', 'Hannah', 'Ivan', 'Julia', 'Kevin', 'Laura', 'Mike', 'Nancy', 'Oscar', 'Priya', 'Quinn', 'Rachel', 'Sam', 'Tina'];
+    const LAST_NAMES = ['Smith', 'Johnson', 'Williams', 'Brown', 'Jones', 'Sharbidre', 'Miller', 'Davis', 'Wilson', 'Moore', 'Taylor', 'Anderson', 'Thomas', 'Jackson', 'White', 'Harris', 'Martin', 'Thompson', 'Lee', 'Patel'];
     const DOMAINS = ['gmail.com', 'yahoo.com', 'outlook.com', 'test.com', 'example.com', 'qa-test.io'];
     const SYMBOLS = '!@#$%^&*()_+-=[]{}|;:,.<>?';
     const ALPHA = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
@@ -268,7 +268,7 @@
 
     // ─── Message Listener ────────────────────────────────────────────────────────
 
-    chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+    browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
         if (request.action === 'ffFill') {
             const count = fillFields(request.rules || []);
             sendResponse({ ok: true, count });
@@ -289,7 +289,7 @@
             if (!e.ctrlKey || !e.shiftKey) return;
             if (e.code === 'KeyF') {
                 e.preventDefault();
-                chrome.storage.local.get(['ffActiveProfile', 'ffProfiles'], (res) => {
+                browser.storage.local.get(['ffActiveProfile', 'ffProfiles'], (res) => {
                     const profiles = res.ffProfiles || [];
                     const active = profiles.find(p => p.id === res.ffActiveProfile);
                     const count = fillFields(active ? active.rules : []);

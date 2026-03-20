@@ -11,7 +11,7 @@
 
     // 1. Initial Load: Check if we are already watching anything
     try {
-        chrome.storage.local.get(['trackedKeywords'], (res) => {
+        browser.storage.local.get(['trackedKeywords'], (res) => {
             if (res.trackedKeywords && res.trackedKeywords.length > 0) {
                 watchedKeywords = res.trackedKeywords;
                 startWatchingLoop();
@@ -22,7 +22,7 @@
     }
 
     // 2. Listen for dynamic changes from the popup
-    chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+    browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
         try {
             if (request.action === 'findKeyword') {
                 const results = findAndHighlight(request.keyword, request.useRegex);
@@ -64,7 +64,7 @@
         if (!watchedKeywords.length) return;
 
         // Safety: If runtime is disabled, stop the loop
-        if (!chrome.runtime || !chrome.runtime.id) {
+        if (!browser.runtime || !browser.runtime.id) {
             stopWatchingLoop();
             return;
         }
@@ -92,13 +92,13 @@
             // Only notify if we haven't notified for THIS specific keyword on THIS page yet
             if (foundInThisBatch && !notifiedKeywords.has(kw.keyword)) {
                 try {
-                    chrome.runtime.sendMessage({
+                    browser.runtime.sendMessage({
                         action: 'keywordMatchFound',
                         keyword: kw.keyword,
                         url: window.location.href,
                         count: 1
                     }, () => {
-                        if (chrome.runtime.lastError) {
+                        if (browser.runtime.lastError) {
                             // Context invalidated, stop loop
                             stopWatchingLoop();
                         } else {

@@ -117,7 +117,7 @@
 
     // --- 2. Load & Render Logic ---
     function loadNotes() {
-        chrome.storage.local.get(['allNotes', 'notesVisible'], (res) => {
+        browser.storage.local.get(['allNotes', 'notesVisible'], (res) => {
             const allNotes = res.allNotes || {};
             pageNotes = allNotes[window.location.origin + window.location.pathname] || [];
 
@@ -168,11 +168,13 @@
             const popup = document.createElement('div');
             popup.className = 'qa-note-popup';
             popup.id = 'popup-' + index;
-            popup.innerHTML = `
+            const htmlContent = `
                 <span class="close-note" data-index="${index}">×</span>
                 <b>${escapeHtml(note.title)}</b>
                 ${escapeHtml(note.message)}
             `;
+            const doc = new DOMParser().parseFromString(htmlContent, 'text/html');
+            popup.replaceChildren(...doc.body.childNodes);
             const currentRect = targetEl.getBoundingClientRect();
             popup.style.top = (currentRect.top + window.scrollY + 10) + 'px';
             popup.style.left = (currentRect.left + window.scrollX + 10) + 'px';
@@ -198,21 +200,21 @@
     function deleteNote(index) {
         // Remove confirm() as per user rule: "remove alerts... dont add just show saved/deleted"
         const key = window.location.origin + window.location.pathname;
-        chrome.storage.local.get(['allNotes'], (res) => {
+        browser.storage.local.get(['allNotes'], (res) => {
             const allNotes = res.allNotes || {};
             if (allNotes[key]) {
                 allNotes[key].splice(index, 1);
-                chrome.storage.local.set({ allNotes }, () => {
+                browser.storage.local.set({ allNotes }, () => {
                     loadNotes();
                     showToast('🗑️ Note deleted');
-                    chrome.runtime.sendMessage({ action: 'notesUpdated' });
+                    browser.runtime.sendMessage({ action: 'notesUpdated' });
                 });
             }
         });
     }
 
     // --- 3. Event Listeners ---
-    chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+    browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
         if (request.action === 'toggleTagging') {
             taggingMode = request.state;
             if (!taggingMode) {
@@ -238,7 +240,7 @@
             taggingMode = false;
             if (highlightedElement) highlightedElement.classList.remove('qa-tagging-highlight');
             document.getElementById('qa-note-form')?.remove();
-            chrome.runtime.sendMessage({ action: 'taggingCanceled' });
+            browser.runtime.sendMessage({ action: 'taggingCanceled' });
         }
     });
 
@@ -262,13 +264,15 @@
         document.getElementById('qa-note-form')?.remove();
         const form = document.createElement('div');
         form.id = 'qa-note-form';
-        form.innerHTML = `
+        const htmlContent = `
             <div style="font-weight:bold; margin-bottom:10px; font-size:14px;">📌 Add Note</div>
             <input type="text" id="qa-note-title" placeholder="Tag Name">
             <textarea id="qa-note-message" placeholder="Message..."></textarea>
             <button id="qa-save-note">Save Tag</button>
             <button id="qa-cancel-note" style="background:#eee; color:#666; margin-top:5px;">Cancel</button>
         `;
+        const doc = new DOMParser().parseFromString(htmlContent, 'text/html');
+        form.replaceChildren(...doc.body.childNodes);
         document.body.appendChild(form);
 
         document.getElementById('qa-save-note').addEventListener('click', () => {
@@ -284,13 +288,13 @@
 
     function saveNote(noteData) {
         const key = window.location.origin + window.location.pathname;
-        chrome.storage.local.get(['allNotes'], (res) => {
+        browser.storage.local.get(['allNotes'], (res) => {
             const allNotes = res.allNotes || {};
             if (!allNotes[key]) allNotes[key] = [];
             allNotes[key].push(noteData);
-            chrome.storage.local.set({ allNotes }, () => {
+            browser.storage.local.set({ allNotes }, () => {
                 loadNotes();
-                chrome.runtime.sendMessage({ action: 'notesUpdated' });
+                browser.runtime.sendMessage({ action: 'notesUpdated' });
             });
         });
     }
@@ -319,9 +323,7 @@
     }
 
     function escapeHtml(text) {
-        const div = document.createElement('div');
-        div.textContent = text;
-        return div.innerHTML;
+        return text ? String(text).replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m])) : '';
     }
 
     // Initialize

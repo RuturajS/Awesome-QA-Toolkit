@@ -1,3 +1,9 @@
+function setSafeHTML(element, htmlString) {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(htmlString, 'text/html');
+    element.replaceChildren(...doc.body.childNodes);
+}
+
 document.addEventListener('DOMContentLoaded', () => {
 
     // ─── Global status bar (replaces all alerts) ─────────────────────────────────
@@ -84,7 +90,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Settings Persistence ---
     const settingsKeys = ['screenshotTimestamp', 'annotateRecord', 'recordingTimestamp'];
 
-    chrome.storage.sync.get(settingsKeys, (result) => {
+    browser.storage.sync.get(settingsKeys, (result) => {
         settingsKeys.forEach(key => {
             const checkbox = document.getElementById(key);
             if (checkbox && result[key] !== undefined) {
@@ -97,7 +103,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const checkbox = document.getElementById(key);
         if (checkbox) {
             checkbox.addEventListener('change', () => {
-                chrome.storage.sync.set({ [key]: checkbox.checked });
+                browser.storage.sync.set({ [key]: checkbox.checked });
             });
         }
     });
@@ -107,17 +113,17 @@ document.addEventListener('DOMContentLoaded', () => {
     // 1. Full Page (Scrolling - No Prompt)
     if (document.getElementById('fullPageBtn')) {
         document.getElementById('fullPageBtn').addEventListener('click', async () => {
-            const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+            const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
             if (tab) {
                 const addTimestamp = document.getElementById('screenshotTimestamp').checked;
-                chrome.scripting.executeScript({
+                browser.scripting.executeScript({
                     target: { tabId: tab.id },
                     func: (timestamp) => { window.screenshotAddTimestamp = timestamp; },
                     args: [addTimestamp]
                 }, () => {
-                    chrome.scripting.executeScript({
+                    browser.scripting.executeScript({
                         target: { tabId: tab.id },
-                        files: ['scripts/full_page_screenshot.js']
+                        files: ['scripts/browser_polyfill.js', 'scripts/full_page_screenshot.js']
                     });
                 });
                 window.close();
@@ -128,17 +134,17 @@ document.addEventListener('DOMContentLoaded', () => {
     // 2. Visible Area (One Click - No Prompt)
     if (document.getElementById('visibleBtn')) {
         document.getElementById('visibleBtn').addEventListener('click', async () => {
-            const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+            const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
             if (tab) {
                 const addTimestamp = document.getElementById('screenshotTimestamp').checked;
-                chrome.scripting.executeScript({
+                browser.scripting.executeScript({
                     target: { tabId: tab.id },
                     func: (timestamp) => { window.screenshotAddTimestamp = timestamp; },
                     args: [addTimestamp]
                 }, () => {
-                    chrome.scripting.executeScript({
+                    browser.scripting.executeScript({
                         target: { tabId: tab.id },
-                        files: ['scripts/visible_screenshot.js']
+                        files: ['scripts/browser_polyfill.js', 'scripts/visible_screenshot.js']
                     });
                 });
                 window.close();
@@ -149,17 +155,17 @@ document.addEventListener('DOMContentLoaded', () => {
     // 3. Selection (Always Drappable Box)
     if (document.getElementById('screenshotBtn')) {
         document.getElementById('screenshotBtn').addEventListener('click', async () => {
-            const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+            const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
             if (tab) {
                 const addTimestamp = document.getElementById('screenshotTimestamp').checked;
-                chrome.scripting.executeScript({
+                browser.scripting.executeScript({
                     target: { tabId: tab.id },
                     func: (timestamp) => { window.screenshotAddTimestamp = timestamp; },
                     args: [addTimestamp]
                 }, () => {
-                    chrome.scripting.executeScript({
+                    browser.scripting.executeScript({
                         target: { tabId: tab.id },
-                        files: ['scripts/screenshot.js']
+                        files: ['scripts/browser_polyfill.js', 'scripts/screenshot.js']
                     });
                 });
                 window.close();
@@ -170,17 +176,17 @@ document.addEventListener('DOMContentLoaded', () => {
     // 4. Desktop (Entire OS - Prompts)
     if (document.getElementById('desktopBtn')) {
         document.getElementById('desktopBtn').addEventListener('click', async () => {
-            const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+            const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
             if (tab) {
                 const addTimestamp = document.getElementById('screenshotTimestamp').checked;
-                chrome.scripting.executeScript({
+                browser.scripting.executeScript({
                     target: { tabId: tab.id },
                     func: (timestamp) => { window.screenshotAddTimestamp = timestamp; },
                     args: [addTimestamp]
                 }, () => {
-                    chrome.scripting.executeScript({
+                    browser.scripting.executeScript({
                         target: { tabId: tab.id },
-                        files: ['scripts/whole_screen_screenshot.js']
+                        files: ['scripts/browser_polyfill.js', 'scripts/whole_screen_screenshot.js']
                     });
                 });
                 window.close();
@@ -190,13 +196,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (document.getElementById('recordBtn')) {
         document.getElementById('recordBtn').addEventListener('click', async () => {
-            const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+            const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
             const enableEffects = document.getElementById('annotateRecord').checked;
             const addTimestamp = document.getElementById('recordingTimestamp').checked;
 
             // Start the actual recording script on the active tab
             if (tab) {
-                chrome.scripting.executeScript({
+                browser.scripting.executeScript({
                     target: { tabId: tab.id },
                     func: (effects, timestamp) => {
                         window.enableRecorderEffects = effects;
@@ -204,9 +210,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     },
                     args: [enableEffects, addTimestamp]
                 }, () => {
-                    chrome.scripting.executeScript({
+                    browser.scripting.executeScript({
                         target: { tabId: tab.id },
-                        files: ['scripts/recorder_inline.js']
+                        files: ['scripts/browser_polyfill.js', 'scripts/recorder_inline.js']
                     });
                 });
 
@@ -217,11 +223,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (document.getElementById('measureBtn')) {
         document.getElementById('measureBtn').addEventListener('click', async () => {
-            const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+            const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
             if (tab) {
-                chrome.scripting.executeScript({
+                browser.scripting.executeScript({
                     target: { tabId: tab.id },
-                    files: ['scripts/measure.js']
+                    files: ['scripts/browser_polyfill.js', 'scripts/measure.js']
                 });
                 window.close();
             }
@@ -237,12 +243,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (document.getElementById('extractUrlsBtn')) {
         document.getElementById('extractUrlsBtn').addEventListener('click', async () => {
-            const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+            const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
             if (tab) {
                 switchView('extractorView');
-                chrome.scripting.executeScript({
+                browser.scripting.executeScript({
                     target: { tabId: tab.id },
-                    files: ['scripts/url_extractor.js']
+                    files: ['scripts/browser_polyfill.js', 'scripts/url_extractor.js']
                 });
             }
         });
@@ -281,19 +287,19 @@ document.addEventListener('DOMContentLoaded', () => {
         errorDiv.classList.add('hidden');
         searchInput.classList.add('hidden');
         loadingDiv.classList.remove('hidden');
-        resultsTableBody.innerHTML = '';
+        resultsTableBody.replaceChildren();
         currentResults = [];
         searchInput.value = '';
         toggleExpansion(false); // Shrink during loading
 
         try {
-            const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+            const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
             if (!tab) throw new Error("No active tab found.");
-            await chrome.scripting.executeScript({ target: { tabId: tab.id }, files: ['scripts/scanner.js'] });
-            chrome.tabs.sendMessage(tab.id, { action: "scan" }, (response) => {
+            await browser.scripting.executeScript({ target: { tabId: tab.id }, files: ['scripts/browser_polyfill.js', 'scripts/scanner.js'] });
+            browser.tabs.sendMessage(tab.id, { action: "scan" }, (response) => {
                 loadingDiv.classList.add('hidden');
-                if (chrome.runtime.lastError) {
-                    showError(chrome.runtime.lastError.message);
+                if (browser.runtime.lastError) {
+                    showError(browser.runtime.lastError.message);
                     return;
                 }
                 if (response && response.error) {
@@ -327,24 +333,24 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     function renderTable(results) {
-        resultsTableBody.innerHTML = '';
+        resultsTableBody.replaceChildren();
         issueCountSpan.textContent = `${results.length} issues found`;
         if (results.length === 0) {
-            resultsTableBody.innerHTML = `<tr><td colspan="4" style="text-align:center;">No matching issues found.</td></tr>`;
+            setSafeHTML(resultsTableBody, `<tr><td colspan="4" style="text-align:center;">No matching issues found.</td></tr>`);
         } else {
             results.forEach((issue) => {
                 const row = document.createElement('tr');
                 row.className = 'clickable-row';
                 let severityClass = issue.severity === 'High' ? 'severity-high' : (issue.severity === 'Medium' ? 'severity-medium' : 'severity-low');
-                row.innerHTML = `
+                setSafeHTML(row, `
                     <td>${issue.type}</td>
                     <td class="url-cell">${escapeHtml(issue.details)}</td>
                     <td class="${severityClass}">${issue.severity}</td>
                     <td>${escapeHtml(issue.recommendation)}</td>
-                `;
+                `);
                 const detailRow = document.createElement('tr');
                 detailRow.className = 'detail-row hidden';
-                detailRow.innerHTML = `
+                setSafeHTML(detailRow, `
                     <td colspan="4">
                         <div class="detail-content">
                             <div class="detail-grid">
@@ -354,7 +360,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             </div>
                         </div>
                     </td>
-                `;
+                `);
                 row.addEventListener('click', () => detailRow.classList.toggle('hidden'));
                 resultsTableBody.appendChild(row);
                 resultsTableBody.appendChild(detailRow);
@@ -451,41 +457,43 @@ document.addEventListener('DOMContentLoaded', () => {
         const id = 'schedule_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
         const schedule = { id, url, scheduledTime: time };
         schedules.push(schedule);
-        chrome.storage.local.set({ schedules });
-        chrome.alarms.create(id, { when: time });
+        browser.storage.local.set({ schedules });
+        browser.alarms.create(id, { when: time });
         renderSchedules();
     }
 
     function loadSchedules() {
-        chrome.storage.local.get(['schedules'], (res) => {
+        browser.storage.local.get(['schedules'], (res) => {
             const now = Date.now();
             schedules = (res.schedules || []).filter(s => s.scheduledTime > now);
-            chrome.storage.local.set({ schedules });
+            browser.storage.local.set({ schedules });
             renderSchedules();
         });
     }
 
     function renderSchedules() {
-        const container = document.getElementById('scheduleContainer');
-        document.getElementById('scheduleCount').textContent = schedules.length;
+        const countSpan = document.getElementById('scheduleCount');
+        countSpan.textContent = schedules.length;
+
         if (!schedules.length) {
-            container.innerHTML = '<div class="empty-state">No active schedules</div>';
+            setSafeHTML(container, '<div class="empty-state">No active schedules</div>');
             return;
         }
+
         schedules.sort((a, b) => a.scheduledTime - b.scheduledTime);
-        container.innerHTML = schedules.map(s => `
+        setSafeHTML(container, schedules.map(s => `
             <div class="schedule-item">
                 <div class="url">${escapeHtml(s.url)}</div>
                 <div class="time">${new Date(s.scheduledTime).toLocaleString()}</div>
                 <button class="delete-schedule" data-id="${s.id}">Delete</button>
             </div>
-        `).join('');
+        `).join(''));
         container.querySelectorAll('.delete-schedule').forEach(btn => {
             btn.addEventListener('click', () => {
                 const id = btn.dataset.id;
                 schedules = schedules.filter(s => s.id !== id);
-                chrome.storage.local.set({ schedules });
-                chrome.alarms.clear(id);
+                browser.storage.local.set({ schedules });
+                browser.alarms.clear(id);
                 renderSchedules();
             });
         });
@@ -495,10 +503,10 @@ document.addEventListener('DOMContentLoaded', () => {
     let extractedData = null;
     let extractorFilter = 'all';
 
-    chrome.runtime.onMessage.addListener((req) => {
+    browser.runtime.onMessage.addListener((req) => {
         if (req.action === 'showUrlExtractor') {
             extractedData = { urls: req.urls, pageUrl: req.pageUrl, pageTitle: req.pageTitle };
-            chrome.storage.local.set({ extractedUrls: extractedData });
+            browser.storage.local.set({ extractedUrls: extractedData });
             renderExtractedUrls();
         }
     });
@@ -521,9 +529,9 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('showingCount').textContent = urls.length;
         const container = document.getElementById('extractedUrlList');
         if (!urls.length) {
-            container.innerHTML = '<div class="empty-state">No URLs found</div>';
+            setSafeHTML(container, '<div class="empty-state">No URLs found</div>');
         } else {
-            container.innerHTML = urls.map(u => `<div class="url-item">${escapeHtml(u)}</div>`).join('');
+            setSafeHTML(container, urls.map(u => `<div class="url-item">${escapeHtml(u)}</div>`).join(''));
         }
     }
 
@@ -553,7 +561,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Load initial extracted data if exists
-    chrome.storage.local.get(['extractedUrls'], (res) => {
+    browser.storage.local.get(['extractedUrls'], (res) => {
         if (res.extractedUrls) {
             extractedData = res.extractedUrls;
             renderExtractedUrls();
@@ -577,7 +585,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (openSettingsLink) {
         openSettingsLink.addEventListener('click', (e) => {
             e.preventDefault();
-            chrome.tabs.create({ url: 'chrome://settings/downloads' });
+            browser.tabs.create({ url: 'chrome://settings/downloads' });
         });
     }
 
@@ -610,13 +618,18 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!confirm('Note: Ensure "Ask where to save each file before downloading" is OFF in Chrome settings for silent capture. Continue?')) return;
 
         if (isFullScreen) {
-            chrome.desktopCapture.chooseDesktopMedia(['screen'], async (streamId) => {
-                if (!streamId) {
-                    showStatus('Permission to capture screen was denied.');
-                    return;
-                }
-                startAutoShotTask(interval, count, folder, true, false, false, streamId);
-            });
+            const dc = chrome['desktopCapture'];
+            if (dc && dc['chooseDesktopMedia']) {
+                dc['chooseDesktopMedia'](['screen'], async (streamId) => {
+                    if (!streamId) {
+                        showStatus('Permission to capture screen was denied.');
+                        return;
+                    }
+                    startAutoShotTask(interval, count, folder, true, false, false, streamId);
+                });
+            } else {
+                showStatus('Full Desktop Capture is not supported in this browser (Firefox requires manual selection).', true);
+            }
         } else {
             startAutoShotTask(interval, count, folder, false, isFullPage, isVisible, null);
         }
@@ -625,7 +638,7 @@ document.addEventListener('DOMContentLoaded', () => {
     async function startAutoShotTask(interval, count, folder, isFullScreen, isFullPage, isVisible, streamId) {
         let tab = null;
         if (!isFullScreen) {
-            [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+            [tab] = await browser.tabs.query({ active: true, currentWindow: true });
             if (!tab) { showStatus('No active tab found', true); return; }
         }
 
@@ -649,10 +662,10 @@ document.addEventListener('DOMContentLoaded', () => {
         };
 
         autoTasks.push(task);
-        chrome.storage.local.set({ autoTasks });
+        browser.storage.local.set({ autoTasks });
 
         // Create the alarm for the first shot
-        chrome.alarms.create(taskId, { when: firstShotTime });
+        browser.alarms.create(taskId, { when: firstShotTime });
         renderAutoTasks();
         showStatus(`Started interval capture: ${count} shots, every ${interval}s`);
     }
@@ -665,7 +678,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const schedTime = new Date(timeInput).getTime();
         if (schedTime <= Date.now()) { showStatus('Time must be in the future', true); return; }
 
-        const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+        const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
         if (!tab) { showStatus('No active tab found', true); return; }
 
         const taskId = 'specificShot_' + Date.now();
@@ -679,14 +692,14 @@ document.addEventListener('DOMContentLoaded', () => {
         };
 
         autoTasks.push(task);
-        chrome.storage.local.set({ autoTasks });
-        chrome.alarms.create(taskId, { when: schedTime });
+        browser.storage.local.set({ autoTasks });
+        browser.alarms.create(taskId, { when: schedTime });
         renderAutoTasks();
         showStatus('Scheduled screenshot for ' + new Date(schedTime).toLocaleString());
     });
 
     function loadAutoTasks() {
-        chrome.storage.local.get(['autoTasks'], (res) => {
+        browser.storage.local.get(['autoTasks'], (res) => {
             autoTasks = res.autoTasks || [];
             renderAutoTasks();
         });
@@ -698,11 +711,11 @@ document.addEventListener('DOMContentLoaded', () => {
         countSpan.textContent = autoTasks.length;
 
         if (!autoTasks.length) {
-            container.innerHTML = '<div class="empty-state">No active capture tasks</div>';
+            setSafeHTML(container, '<div class="empty-state">No active capture tasks</div>');
             return;
         }
 
-        container.innerHTML = autoTasks.map(t => `
+        setSafeHTML(container, autoTasks.map(t => `
             <div class="schedule-item">
                 <div class="url"><b>${t.type === 'interval' ? 'Interval' : 'Scheduled'}</b>: ${t.tabUrl}</div>
                 <div class="time">
@@ -712,14 +725,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
                 <button class="delete-schedule" data-id="${t.id}">Cancel</button>
             </div>
-        `).join('');
+        `).join(''));
 
         container.querySelectorAll('.delete-schedule').forEach(btn => {
             btn.addEventListener('click', () => {
                 const id = btn.dataset.id;
                 autoTasks = autoTasks.filter(t => t.id !== id);
-                chrome.storage.local.set({ autoTasks });
-                chrome.alarms.clear(id);
+                browser.storage.local.set({ autoTasks });
+                browser.alarms.clear(id);
                 renderAutoTasks();
             });
         });
@@ -735,7 +748,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('watchMode').classList.remove('active');
         document.getElementById('findOnceControls').classList.remove('hidden');
         document.getElementById('watchControls').classList.add('hidden');
-        document.getElementById('featureInfoText').innerHTML = '<b>Find Once:</b> Search the current page staticly and highlight matches in yellow.';
+        setSafeHTML(document.getElementById('featureInfoText'), '<b>Find Once:</b> Search the current page staticly and highlight matches in yellow.');
     });
 
     document.getElementById('watchMode').addEventListener('click', () => {
@@ -743,7 +756,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('findMode').classList.remove('active');
         document.getElementById('watchControls').classList.remove('hidden');
         document.getElementById('findOnceControls').classList.add('hidden');
-        document.getElementById('featureInfoText').innerHTML = '<b>Watch & Notify:</b> Save this keyword. The extension will <b>automatically notify you</b> whenever it appears on any page you visit.';
+        setSafeHTML(document.getElementById('featureInfoText'), '<b>Watch & Notify:</b> Save this keyword. The extension will <b>automatically notify you</b> whenever it appears on any page you visit.');
     });
 
     // Find Once
@@ -752,13 +765,13 @@ document.addEventListener('DOMContentLoaded', () => {
         const useRegex = document.getElementById('useRegex').checked;
         if (!keyword) { showStatus('Please enter a keyword', true); return; }
 
-        const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+        const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
         if (!tab) return;
 
         try {
-            await chrome.scripting.executeScript({ target: { tabId: tab.id }, files: ['scripts/keyword_spotter.js'] });
-            chrome.tabs.sendMessage(tab.id, { action: 'findKeyword', keyword, useRegex }, (response) => {
-                if (chrome.runtime.lastError) { showStatus('Error: ' + chrome.runtime.lastError.message, true); return; }
+            await browser.scripting.executeScript({ target: { tabId: tab.id }, files: ['scripts/keyword_spotter.js'] });
+            browser.tabs.sendMessage(tab.id, { action: 'findKeyword', keyword, useRegex }, (response) => {
+                if (browser.runtime.lastError) { showStatus('Error: ' + browser.runtime.lastError.message, true); return; }
                 if (response?.error) { showStatus('Error: ' + response.error, true); return; }
                 if (response?.count > 0) {
                     saveMatchLog(keyword, response.count, response.url);
@@ -775,20 +788,20 @@ document.addEventListener('DOMContentLoaded', () => {
         const keyword = document.getElementById('keywordInput').value.trim();
         if (!keyword) { showStatus('Please enter a keyword to watch', true); return; }
 
-        const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+        const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
 
         // Save to tracked list
         if (trackedKeywords.find(k => k.keyword === keyword)) { showStatus('Already watching this keyword', true); return; }
 
         trackedKeywords.push({ id: 'track_' + Date.now(), keyword });
-        chrome.storage.local.set({ trackedKeywords });
+        browser.storage.local.set({ trackedKeywords });
         renderTrackedKeywords();
 
         // Start watching immediately on current tab
         if (tab) {
             try {
-                await chrome.scripting.executeScript({ target: { tabId: tab.id }, files: ['scripts/keyword_spotter.js'] });
-                chrome.tabs.sendMessage(tab.id, { action: 'startWatching', keywords: trackedKeywords });
+                await browser.scripting.executeScript({ target: { tabId: tab.id }, files: ['scripts/keyword_spotter.js'] });
+                browser.tabs.sendMessage(tab.id, { action: 'startWatching', keywords: trackedKeywords });
             } catch (e) { }
         }
 
@@ -799,12 +812,12 @@ document.addEventListener('DOMContentLoaded', () => {
     function saveMatchLog(keyword, count, url) {
         const log = { id: 'match_' + Date.now(), keyword, count, url, timestamp: new Date().toLocaleString() };
         matchLogs.unshift(log);
-        chrome.storage.local.set({ matchLogs: matchLogs.slice(0, 100) });
+        browser.storage.local.set({ matchLogs: matchLogs.slice(0, 100) });
         renderMatchLogs();
     }
 
     function loadKeywordSpotterData() {
-        chrome.storage.local.get(['matchLogs', 'trackedKeywords'], (res) => {
+        browser.storage.local.get(['matchLogs', 'trackedKeywords'], (res) => {
             matchLogs = res.matchLogs || [];
             trackedKeywords = res.trackedKeywords || [];
             renderMatchLogs();
@@ -816,16 +829,16 @@ document.addEventListener('DOMContentLoaded', () => {
         const container = document.getElementById('matchLogContainer');
         document.getElementById('matchLogCount').textContent = matchLogs.length;
         if (!matchLogs.length) {
-            container.innerHTML = '<div class="empty-state">No matches found yet</div>';
+            setSafeHTML(container, '<div class="empty-state">No matches found yet</div>');
             return;
         }
-        container.innerHTML = matchLogs.map(log => `
+        setSafeHTML(container, matchLogs.map(log => `
             <div class="url-item" style="font-size: 11px; padding: 10px; border-bottom: 1px solid var(--border);">
                 <div style="font-weight: bold; margin-bottom: 4px;">"${escapeHtml(log.keyword)}" → ${log.count} matches</div>
                 <div style="color: var(--text-muted); font-size: 10px; word-break: break-all;">${escapeHtml(log.url)}</div>
                 <div style="color: var(--text-muted); font-size: 9px; margin-top: 4px;">${log.timestamp}</div>
             </div>
-        `).join('');
+        `).join(''));
     }
 
     function renderTrackedKeywords() {
@@ -839,17 +852,17 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         section.classList.remove('hidden');
-        container.innerHTML = trackedKeywords.map(kw => `
+        setSafeHTML(container, trackedKeywords.map(kw => `
             <div class="url-item" style="display: flex; justify-content: space-between; align-items: center; padding: 6px 10px;">
                 <span style="font-weight: 600;">${escapeHtml(kw.keyword)}</span>
                 <button class="delete-track" data-id="${kw.id}" style="border:none; background:transparent; color:#ff4444; cursor:pointer; font-weight:bold;">×</button>
             </div>
-        `).join('');
+        `).join(''));
 
         container.querySelectorAll('.delete-track').forEach(btn => {
             btn.addEventListener('click', () => {
                 trackedKeywords = trackedKeywords.filter(k => k.id !== btn.dataset.id);
-                chrome.storage.local.set({ trackedKeywords });
+                browser.storage.local.set({ trackedKeywords });
                 renderTrackedKeywords();
             });
         });
@@ -858,7 +871,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('clearMatchLogs').addEventListener('click', () => {
         if (confirm('Clear all logs?')) {
             matchLogs = [];
-            chrome.storage.local.set({ matchLogs: [] });
+            browser.storage.local.set({ matchLogs: [] });
             renderMatchLogs();
         }
     });
@@ -887,15 +900,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const toggleTaggingBtn = document.getElementById('toggleTaggingBtn');
     if (toggleTaggingBtn) {
         toggleTaggingBtn.addEventListener('click', async () => {
-            const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+            const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
             if (!tab) return;
 
             isTaggingActive = !isTaggingActive;
             updateTaggingUI();
 
             try {
-                await chrome.scripting.executeScript({ target: { tabId: tab.id }, files: ['scripts/note_tagger.js'] });
-                chrome.tabs.sendMessage(tab.id, { action: 'toggleTagging', state: isTaggingActive });
+                await browser.scripting.executeScript({ target: { tabId: tab.id }, files: ['scripts/note_tagger.js'] });
+                browser.tabs.sendMessage(tab.id, { action: 'toggleTagging', state: isTaggingActive });
             } catch (e) { console.log('Tagging toggle failed:', e); }
         });
     }
@@ -913,27 +926,27 @@ document.addEventListener('DOMContentLoaded', () => {
     const visibilityCheckbox = document.getElementById('toggleNotesVisibility');
     if (visibilityCheckbox) {
         // Load preference
-        chrome.storage.local.get(['notesVisible'], (res) => {
+        browser.storage.local.get(['notesVisible'], (res) => {
             visibilityCheckbox.checked = res.notesVisible !== false;
         });
 
         visibilityCheckbox.addEventListener('change', async () => {
             const visible = visibilityCheckbox.checked;
-            chrome.storage.local.set({ notesVisible: visible });
+            browser.storage.local.set({ notesVisible: visible });
 
-            const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+            const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
             if (tab) {
-                chrome.tabs.sendMessage(tab.id, { action: 'toggleNoteVisibility', visible }).catch(() => { });
+                browser.tabs.sendMessage(tab.id, { action: 'toggleNoteVisibility', visible }).catch(() => { });
             }
         });
     }
 
     async function loadNotesForCurrentPage() {
-        const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+        const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
         if (!tab) return;
 
         const key = new URL(tab.url).origin + new URL(tab.url).pathname;
-        chrome.storage.local.get(['allNotes'], (res) => {
+        browser.storage.local.get(['allNotes'], (res) => {
             const allNotes = res.allNotes || {};
             pageNotes = allNotes[key] || [];
             renderPageNotes();
@@ -945,11 +958,11 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('pageNoteCount').textContent = pageNotes.length;
 
         if (!pageNotes.length) {
-            container.innerHTML = '<div class="empty-state">No notes on this page</div>';
+            setSafeHTML(container, '<div class="empty-state">No notes on this page</div>');
             return;
         }
 
-        container.innerHTML = pageNotes.map((note, index) => `
+        setSafeHTML(container, pageNotes.map((note, index) => `
             <div class="url-item" style="padding:10px; border-bottom:1px solid var(--border);">
                 <div style="display:flex; justify-content:space-between; align-items:flex-start;">
                     <div style="font-weight:bold; color:var(--primary); font-size:12px;">${escapeHtml(note.title)}</div>
@@ -957,22 +970,22 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
                 <div style="font-size:11px; margin-top:4px; line-height:1.4;">${escapeHtml(note.message)}</div>
             </div>
-        `).join('');
+        `).join(''));
 
         container.querySelectorAll('.delete-note').forEach(btn => {
             btn.addEventListener('click', async () => {
                 const index = parseInt(btn.dataset.index);
-                const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+                const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
                 if (!tab) return;
                 const key = new URL(tab.url).origin + new URL(tab.url).pathname;
 
-                chrome.storage.local.get(['allNotes'], (res) => {
+                browser.storage.local.get(['allNotes'], (res) => {
                     const allNotes = res.allNotes || {};
                     if (allNotes[key]) {
                         allNotes[key].splice(index, 1);
-                        chrome.storage.local.set({ allNotes }, () => {
+                        browser.storage.local.set({ allNotes }, () => {
                             loadNotesForCurrentPage();
-                            chrome.tabs.sendMessage(tab.id, { action: 'refreshNotes' }).catch(() => { });
+                            browser.tabs.sendMessage(tab.id, { action: 'refreshNotes' }).catch(() => { });
                         });
                     }
                 });
@@ -981,7 +994,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Listen for updates from content script
-    chrome.runtime.onMessage.addListener((request) => {
+    browser.runtime.onMessage.addListener((request) => {
         if (request.action === 'notesUpdated') {
             loadNotesForCurrentPage();
         } else if (request.action === 'taggingCanceled') {
@@ -1027,12 +1040,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Export Cookies ---
     document.getElementById('exportCookiesBtn').addEventListener('click', async () => {
-        const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+        const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
         if (!tab || !tab.url) { showStatus('No active tab found.', true); return; }
         const url = new URL(tab.url);
-        chrome.cookies.getAll({ domain: url.hostname }, (cookies) => {
-            if (chrome.runtime.lastError) {
-                showStatus('Error: ' + chrome.runtime.lastError.message);
+        browser.cookies.getAll({ domain: url.hostname }, (cookies) => {
+            if (browser.runtime.lastError) {
+                showStatus('Error: ' + browser.runtime.lastError.message);
                 return;
             }
             downloadJson(cookies, `cookies-${url.hostname}-${Date.now()}.json`);
@@ -1045,10 +1058,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const textarea = document.getElementById('cookieInputData');
         if (section.classList.contains('hidden')) {
             // Pre-populate with current cookies for easy editing
-            const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+            const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
             if (tab && tab.url) {
                 const url = new URL(tab.url);
-                chrome.cookies.getAll({ domain: url.hostname }, (cookies) => {
+                browser.cookies.getAll({ domain: url.hostname }, (cookies) => {
                     textarea.value = JSON.stringify(cookies, null, 2);
                     section.classList.remove('hidden');
                 });
@@ -1072,7 +1085,7 @@ document.addEventListener('DOMContentLoaded', () => {
             { showStatus('Invalid JSON: ' + e.message, true); return; }
         }
 
-        const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+        const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
         if (!tab || !tab.url) { showStatus('No active tab.', true); return; }
         const tabUrl = new URL(tab.url);
         let successCount = 0;
@@ -1096,8 +1109,8 @@ document.addEventListener('DOMContentLoaded', () => {
             };
             if (c.expirationDate) details.expirationDate = c.expirationDate;
             if (c.domain) details.domain = c.domain;
-            chrome.cookies.set(details, (result) => {
-                if (chrome.runtime.lastError || !result) failCount++;
+            browser.cookies.set(details, (result) => {
+                if (browser.runtime.lastError || !result) failCount++;
                 else successCount++;
                 setNext(i + 1);
             });
@@ -1107,9 +1120,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Export Local Storage ---
     document.getElementById('exportStorageBtn').addEventListener('click', async () => {
-        const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+        const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
         if (!tab) { showStatus('No active tab.', true); return; }
-        chrome.scripting.executeScript({
+        browser.scripting.executeScript({
             target: { tabId: tab.id },
             func: () => {
                 const data = {};
@@ -1120,7 +1133,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 return data;
             }
         }, (results) => {
-            if (chrome.runtime.lastError) { showStatus('Error: ' + chrome.runtime.lastError.message, true); return; }
+            if (browser.runtime.lastError) { showStatus('Error: ' + browser.runtime.lastError.message, true); return; }
             const data = results[0].result;
             const hostname = new URL(tab.url).hostname;
             downloadJson(data, `localstorage-${hostname}-${Date.now()}.json`);
@@ -1133,9 +1146,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const textarea = document.getElementById('storageInputData');
         if (section.classList.contains('hidden')) {
             // Pre-populate with current localStorage for easy editing
-            const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+            const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
             if (tab) {
-                chrome.scripting.executeScript({
+                browser.scripting.executeScript({
                     target: { tabId: tab.id },
                     func: () => {
                         const data = {};
@@ -1146,7 +1159,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         return data;
                     }
                 }, (results) => {
-                    if (!chrome.runtime.lastError && results[0]) {
+                    if (!browser.runtime.lastError && results[0]) {
                         textarea.value = JSON.stringify(results[0].result, null, 2);
                     }
                     section.classList.remove('hidden');
@@ -1171,9 +1184,9 @@ document.addEventListener('DOMContentLoaded', () => {
             { showStatus('Invalid JSON: ' + e.message, true); return; }
         }
 
-        const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+        const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
         if (!tab) { showStatus('No active tab.', true); return; }
-        chrome.scripting.executeScript({
+        browser.scripting.executeScript({
             target: { tabId: tab.id },
             func: (storageData) => {
                 for (const [key, value] of Object.entries(storageData)) {
@@ -1183,7 +1196,7 @@ document.addEventListener('DOMContentLoaded', () => {
             },
             args: [data]
         }, (results) => {
-            if (chrome.runtime.lastError) { showStatus('Error: ' + chrome.runtime.lastError.message, true); return; }
+            if (browser.runtime.lastError) { showStatus('Error: ' + browser.runtime.lastError.message, true); return; }
             showStatus(`Saved ${results[0].result} keys to localStorage successfully!`);
         });
     });
@@ -1194,7 +1207,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let ffCurrentProfileId = null;
 
     function ffLoadProfiles() {
-        chrome.storage.local.get(['ffProfiles', 'ffActiveProfile'], (res) => {
+        browser.storage.local.get(['ffProfiles', 'ffActiveProfile'], (res) => {
             ffProfiles = res.ffProfiles || [];
             ffCurrentProfileId = res.ffActiveProfile || null;
             ffRenderProfileSelect();
@@ -1202,12 +1215,12 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function ffSaveProfiles(cb) {
-        chrome.storage.local.set({ ffProfiles }, cb);
+        browser.storage.local.set({ ffProfiles }, cb);
     }
 
     function ffRenderProfileSelect() {
         const sel = document.getElementById('ffProfileSelect');
-        sel.innerHTML = '<option value="">-- Select Profile --</option>';
+        setSafeHTML(sel, '<option value="">-- Select Profile --</option>');
         ffProfiles.forEach(p => {
             const opt = document.createElement('option');
             opt.value = p.id;
@@ -1228,7 +1241,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('ffProfileSelect').addEventListener('change', () => {
         const sel = document.getElementById('ffProfileSelect');
         ffCurrentProfileId = sel.value || null;
-        chrome.storage.local.set({ ffActiveProfile: ffCurrentProfileId });
+        browser.storage.local.set({ ffActiveProfile: ffCurrentProfileId });
         ffUpdateActionsVisibility();
         if (ffCurrentProfileId) ffOpenProfileEditor(ffCurrentProfileId);
         else document.getElementById('ffProfileEditor').classList.add('hidden');
@@ -1246,7 +1259,7 @@ document.addEventListener('DOMContentLoaded', () => {
         ffProfiles.push(newProfile);
         ffSaveProfiles(() => {
             ffCurrentProfileId = newProfile.id;
-            chrome.storage.local.set({ ffActiveProfile: ffCurrentProfileId });
+            browser.storage.local.set({ ffActiveProfile: ffCurrentProfileId });
             ffRenderProfileSelect();
             ffOpenProfileEditor(newProfile.id);
         });
@@ -1258,7 +1271,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!confirm('Delete this profile?')) return;
         ffProfiles = ffProfiles.filter(p => p.id !== ffCurrentProfileId);
         ffCurrentProfileId = null;
-        chrome.storage.local.set({ ffProfiles, ffActiveProfile: null });
+        browser.storage.local.set({ ffProfiles, ffActiveProfile: null });
         ffRenderProfileSelect();
         document.getElementById('ffProfileEditor').classList.add('hidden');
         document.getElementById('ffActions').classList.add('hidden');
@@ -1274,11 +1287,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function ffRenderRules(rules) {
         const container = document.getElementById('ffRulesList');
-        container.innerHTML = '';
+        container.replaceChildren();
         rules.forEach((rule, idx) => {
             const wrap = document.createElement('div');
-            wrap.style.cssText = 'background:var(--bg-secondary, #1a1a1a); border:1px solid var(--border, #333); border-radius:8px; padding:8px; margin-bottom:6px; font-size:11px;';
-            wrap.innerHTML = `
+            wrap.style.cssText = 'background:var(--bg-secondary, #1a1a1a); border:1px solid var(--border, #333); border-radius:8px; padding:8px; margin-bottom:6px; font-size:11px; color:#fff;';
+            setSafeHTML(wrap, `
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
                     <span style="font-weight:600;">Rule #${idx + 1}</span>
                     <button class="ff-del-rule" data-idx="${idx}" style="border:none;background:transparent;color:#ff4444;cursor:pointer;font-weight:bold;">✕</button>
@@ -1303,7 +1316,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         <input class="ff-rule-length" data-idx="${idx}" type="number" value="${rule.length || 10}" min="1" max="200" style="width:100%;">`
                 }
                 </div>
-            `;
+            `);
             container.appendChild(wrap);
         });
 
@@ -1355,17 +1368,17 @@ document.addEventListener('DOMContentLoaded', () => {
     // Fill Form
     document.getElementById('ffFillBtn').addEventListener('click', async () => {
         const profile = ffProfiles.find(p => p.id === ffCurrentProfileId);
-        const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+        const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
         if (!tab) { showStatus('No active tab.', true); return; }
-        chrome.scripting.executeScript({
+        browser.scripting.executeScript({
             target: { tabId: tab.id },
             files: ['scripts/form_filler.js']
         }, () => {
-            chrome.tabs.sendMessage(tab.id, {
+            browser.tabs.sendMessage(tab.id, {
                 action: 'ffFill',
                 rules: profile ? profile.rules : []
             }, (res) => {
-                if (chrome.runtime.lastError) { showStatus('Error: ' + chrome.runtime.lastError.message, true); return; }
+                if (browser.runtime.lastError) { showStatus('Error: ' + browser.runtime.lastError.message, true); return; }
                 showStatus(`✅ Filled ${res.count} fields!`);
             });
         });
@@ -1373,14 +1386,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Clear Form
     document.getElementById('ffClearBtn').addEventListener('click', async () => {
-        const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+        const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
         if (!tab) { showStatus('No active tab.', true); return; }
-        chrome.scripting.executeScript({
+        browser.scripting.executeScript({
             target: { tabId: tab.id },
             files: ['scripts/form_filler.js']
         }, () => {
-            chrome.tabs.sendMessage(tab.id, { action: 'ffClear' }, (res) => {
-                if (chrome.runtime.lastError) { showStatus('Error: ' + chrome.runtime.lastError.message, true); return; }
+            browser.tabs.sendMessage(tab.id, { action: 'ffClear' }, (res) => {
+                if (browser.runtime.lastError) { showStatus('Error: ' + browser.runtime.lastError.message, true); return; }
                 showStatus(`🗑️ Cleared ${res.count} fields!`);
             });
         });
@@ -1421,21 +1434,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function ccInjectAndFetch(tab) {
         // 1. Inject MAIN world interceptor (captures console.*)  
-        await chrome.scripting.executeScript({
+        await browser.scripting.executeScript({
             target: { tabId: tab.id },
             world: 'MAIN',
             func: mainWorldInterceptor
         }).catch(() => { });
 
         // 2. Inject isolated-world collector (captures onerror/unhandledrejection)
-        await chrome.scripting.executeScript({
+        await browser.scripting.executeScript({
             target: { tabId: tab.id },
             files: ['scripts/console_collector.js']
         }).catch(() => { });
 
         // 3. Read MAIN world logs
         let mainLogs = [];
-        const mainResult = await chrome.scripting.executeScript({
+        const mainResult = await browser.scripting.executeScript({
             target: { tabId: tab.id },
             world: 'MAIN',
             func: readMainWorldLogs
@@ -1445,8 +1458,8 @@ document.addEventListener('DOMContentLoaded', () => {
         // 4. Read isolated world logs
         let isoLogs = [];
         await new Promise(resolve => {
-            chrome.tabs.sendMessage(tab.id, { action: 'getConsoleLogs' }, (res) => {
-                if (!chrome.runtime.lastError && res && res.logs) isoLogs = res.logs;
+            browser.tabs.sendMessage(tab.id, { action: 'getConsoleLogs' }, (res) => {
+                if (!browser.runtime.lastError && res && res.logs) isoLogs = res.logs;
                 resolve();
             });
         });
@@ -1469,11 +1482,11 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('ccInfoCount').textContent = ccAllLogs.filter(l => l.type === 'info').length;
 
         if (!filtered.length) {
-            container.innerHTML = `<div class="empty-state">${ccFilter === 'all' ? 'No logs captured yet. Click Refresh.' : `No ${ccFilter} logs.`}</div>`;
+            setSafeHTML(container, `<div class="empty-state">${ccFilter === 'all' ? 'No logs captured yet. Click Refresh.' : `No ${ccFilter} logs.`}</div>`);
             return;
         }
 
-        container.innerHTML = filtered.map(log => {
+        setSafeHTML(container, filtered.map(log => {
             const color = log.type === 'error' ? '#f87171' : log.type === 'warn' ? '#fbbf24' : '#60a5fa';
             const icon = log.type === 'error' ? '✖' : log.type === 'warn' ? '⚠' : 'ℹ';
             const t = new Date(log.time).toLocaleTimeString();
@@ -1487,13 +1500,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     ${log.source ? `<div style="color:var(--text-muted,#888); font-size:9px; margin-top:2px;">${escapeHtml(log.source)}</div>` : ''}
                 </div>
             `;
-        }).join('');
+        }).join(''));
     }
 
     if (document.getElementById('consoleCollectorBtn')) {
         document.getElementById('consoleCollectorBtn').addEventListener('click', async () => {
             switchView('consoleCollectorView');
-            const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+            const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
             if (!tab) return;
             ccAllLogs = await ccInjectAndFetch(tab);
             ccRenderLogs();
@@ -1514,7 +1527,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Refresh
     document.getElementById('ccRefreshBtn').addEventListener('click', async () => {
-        const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+        const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
         if (!tab) { showStatus('No active tab.', true); return; }
         ccAllLogs = await ccInjectAndFetch(tab);
         ccRenderLogs();
@@ -1523,16 +1536,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Clear
     document.getElementById('ccClearBtn').addEventListener('click', async () => {
-        const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+        const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
         if (tab) {
             // Clear MAIN world logs
-            await chrome.scripting.executeScript({
+            await browser.scripting.executeScript({
                 target: { tabId: tab.id },
                 world: 'MAIN',
                 func: () => { if (window.__qaLogs) window.__qaLogs.length = 0; }
             }).catch(() => { });
             // Clear isolated world logs
-            chrome.tabs.sendMessage(tab.id, { action: 'clearConsoleLogs' }).catch(() => { });
+            browser.tabs.sendMessage(tab.id, { action: 'clearConsoleLogs' }).catch(() => { });
         }
         ccAllLogs = [];
         ccRenderLogs();
@@ -1606,8 +1619,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Export current tabs
     document.getElementById('buExportTabsBtn').addEventListener('click', () => {
-        chrome.tabs.query({}, (tabs) => {
-            if (chrome.runtime.lastError) { showStatus('Cannot query tabs: ' + chrome.runtime.lastError.message, true); return; }
+        browser.tabs.query({}, (tabs) => {
+            if (browser.runtime.lastError) { showStatus('Cannot query tabs: ' + browser.runtime.lastError.message, true); return; }
             const urls = tabs
                 .map(t => t.url)
                 .filter(u => u && u.startsWith('http'));
@@ -1620,8 +1633,8 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('buExportHistoryBtn').addEventListener('click', () => {
         const maxHistory = 200;
         const startTime = Date.now() - 7 * 24 * 60 * 60 * 1000; // last 7 days
-        chrome.history.search({ text: '', maxResults: maxHistory, startTime }, (items) => {
-            if (chrome.runtime.lastError) { showStatus('History error: ' + chrome.runtime.lastError.message, true); return; }
+        browser.history.search({ text: '', maxResults: maxHistory, startTime }, (items) => {
+            if (browser.runtime.lastError) { showStatus('History error: ' + browser.runtime.lastError.message, true); return; }
             const urls = (items || [])
                 .map(i => i.url)
                 .filter(u => u && u.startsWith('http'));
@@ -1690,7 +1703,7 @@ document.addEventListener('DOMContentLoaded', () => {
         showStatus(`Opening ${toOpen.length} URL(s)...`);
 
         for (const url of toOpen) {
-            chrome.tabs.create({ url, active: false });
+            browser.tabs.create({ url, active: false });
             if (delay > 0) await new Promise(r => setTimeout(r, delay));
         }
 

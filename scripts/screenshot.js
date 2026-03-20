@@ -184,7 +184,7 @@
         overlay.style.display = 'none';
 
         setTimeout(() => {
-            chrome.runtime.sendMessage({ action: "captureVisibleTab" }, async (response) => {
+            browser.runtime.sendMessage({ action: "captureVisibleTab" }, async (response) => {
                 overlay.style.display = 'block'; // Restore overlay
 
                 if (response && response.dataUrl) {
@@ -282,7 +282,7 @@
             overlay.style.display = 'none';
             await new Promise(r => setTimeout(r, 100)); // Wait for UI hide
 
-            const response = await new Promise(resolve => chrome.runtime.sendMessage({ action: "captureVisibleTab" }, resolve));
+            const response = await new Promise(resolve => browser.runtime.sendMessage({ action: "captureVisibleTab" }, resolve));
             overlay.style.display = 'block';
 
             if (response && response.dataUrl) {
