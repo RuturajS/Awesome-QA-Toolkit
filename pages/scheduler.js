@@ -173,14 +173,15 @@ function renderSchedules() {
     count.textContent = schedules.length;
 
     if (schedules.length === 0) {
-        container.innerHTML = '<div style="color: #888; font-size: 11px; text-align: center; padding: 20px;">No scheduled URLs</div>';
+        const doc0 = new DOMParser().parseFromString('<div style="color: #888; font-size: 11px; text-align: center; padding: 20px;">No scheduled URLs</div>', 'text/html');
+        container.replaceChildren(...doc0.body.childNodes);
         return;
     }
 
     // Sort by scheduled time
     schedules.sort((a, b) => a.scheduledTime - b.scheduledTime);
 
-    container.innerHTML = schedules.map(schedule => {
+    const htmlContent = schedules.map(schedule => {
         const scheduledDate = new Date(schedule.scheduledTime);
         const timeUntil = getTimeUntil(schedule.scheduledTime);
 
@@ -191,10 +192,19 @@ function renderSchedules() {
                     📅 ${scheduledDate.toLocaleString()}<br>
                     ⏱️ Opens in: ${timeUntil}
                 </div>
-                <button onclick="deleteSchedule('${schedule.id}')">Delete</button>
+                <!-- we need event delegated buttons here if we don't use onclick attribute safely, but DOMParser strips inline event handlers like onclick! So we should NOT use onclick inline. -->
+                <button data-id="${schedule.id}" class="delete-schedule-btn">Delete</button>
             </div>
         `;
     }).join('');
+
+    const doc = new DOMParser().parseFromString(htmlContent, 'text/html');
+    container.replaceChildren(...doc.body.childNodes);
+    container.querySelectorAll('.delete-schedule-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            deleteSchedule(e.target.dataset.id);
+        });
+    });
 }
 
 function getTimeUntil(timestamp) {
@@ -220,9 +230,7 @@ function isValidUrl(url) {
 }
 
 function escapeHtml(text) {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
+    return text ? String(text).replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m])) : '';
 }
 
 // Update time remaining every second

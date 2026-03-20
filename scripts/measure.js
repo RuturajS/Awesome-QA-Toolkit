@@ -40,7 +40,7 @@
             cursor: move;
             user-select: none;
         `;
-        infoPanel.innerHTML = `
+        const htmlContent1 = `
             <div style="font-weight: bold; margin-bottom: 8px; color: #4CAF50; border-bottom: 1px solid #444; padding-bottom: 4px;">
                 📏 Measurement Tool <span style="font-size: 10px; color: #888; float: right;">Drag to move</span>
             </div>
@@ -51,6 +51,8 @@
                 <div><strong>ESC:</strong> Exit tool</div>
             </div>
         `;
+        const doc1 = new DOMParser().parseFromString(htmlContent1, 'text/html');
+        infoPanel.replaceChildren(...doc1.body.childNodes);
 
         // Make info panel draggable
         let isDragging = false;
@@ -179,7 +181,7 @@
                 // Convert pixels to centimeters (assuming 96 DPI)
                 const pxToCm = (px) => (px / 96 * 2.54).toFixed(2);
 
-                infoPanel.innerHTML = `
+                const htmlContent2 = `
                     <div style="font-weight: bold; margin-bottom: 8px; color: #4CAF50; border-bottom: 1px solid #444; padding-bottom: 4px;">
                         📏 Element Dimensions <span style="font-size: 10px; color: #888; float: right;">Drag to move</span>
                     </div>
@@ -198,6 +200,8 @@
                         Press <strong>M</strong> to switch to Measure mode
                     </div>
                 `;
+                const doc2 = new DOMParser().parseFromString(htmlContent2, 'text/html');
+                infoPanel.replaceChildren(...doc2.body.childNodes);
             }
         } else if (mode === 'measure' && isDrawing) {
             // Measure mode - draw line
@@ -220,7 +224,7 @@
             endPoint.style.left = currentX + 'px';
             endPoint.style.top = currentY + 'px';
 
-            infoPanel.innerHTML = `
+            const htmlContent3 = `
                 <div style="font-weight: bold; margin-bottom: 8px; color: #FF5722; border-bottom: 1px solid #444; padding-bottom: 4px;">
                     📐 Distance Measurement <span style="font-size: 10px; color: #888; float: right;">Drag to move</span>
                 </div>
@@ -234,6 +238,8 @@
                     Release to finish measurement
                 </div>
             `;
+            const doc3 = new DOMParser().parseFromString(htmlContent3, 'text/html');
+            infoPanel.replaceChildren(...doc3.body.childNodes);
         }
     }
 
@@ -283,7 +289,7 @@
                 hoveredElement = null;
             }
             clearMeasurement();
-            infoPanel.innerHTML = `
+            const htmlContent4 = `
                 <div style="font-weight: bold; margin-bottom: 8px; color: #FF5722; border-bottom: 1px solid #444; padding-bottom: 4px;">
                     📐 Measure Mode <span style="font-size: 10px; color: #888; float: right;">Drag to move</span>
                 </div>
@@ -294,10 +300,12 @@
                     <div><strong>ESC:</strong> Exit tool</div>
                 </div>
             `;
+            const doc4 = new DOMParser().parseFromString(htmlContent4, 'text/html');
+            infoPanel.replaceChildren(...doc4.body.childNodes);
         } else {
             mode = 'hover';
             clearMeasurement();
-            infoPanel.innerHTML = `
+            const htmlContent5 = `
                 <div style="font-weight: bold; margin-bottom: 8px; color: #4CAF50; border-bottom: 1px solid #444; padding-bottom: 4px;">
                     📏 Hover Mode <span style="font-size: 10px; color: #888; float: right;">Drag to move</span>
                 </div>
@@ -307,6 +315,8 @@
                     <div><strong>ESC:</strong> Exit tool</div>
                 </div>
             `;
+            const doc5 = new DOMParser().parseFromString(htmlContent5, 'text/html');
+            infoPanel.replaceChildren(...doc5.body.childNodes);
         }
     }
 

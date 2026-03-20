@@ -46,13 +46,16 @@ function displayUrls() {
     const listContainer = document.getElementById('urlList');
 
     if (urls.length === 0) {
-        listContainer.innerHTML = '<div class="empty-state">No URLs in this category</div>';
+        const doc0 = new DOMParser().parseFromString('<div class="empty-state">No URLs in this category</div>', 'text/html');
+        listContainer.replaceChildren(...doc0.body.childNodes);
         return;
     }
 
-    listContainer.innerHTML = urls.map(url =>
+    const htmlContent = urls.map(url =>
         `<div class="url-item">${escapeHtml(url)}</div>`
     ).join('');
+    const doc = new DOMParser().parseFromString(htmlContent, 'text/html');
+    listContainer.replaceChildren(...doc.body.childNodes);
 }
 
 function exportAsTxt() {
@@ -117,7 +120,5 @@ function downloadFile(content, filename, mimeType) {
 }
 
 function escapeHtml(text) {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
+    return text ? String(text).replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m])) : '';
 }

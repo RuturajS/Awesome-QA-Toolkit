@@ -62,9 +62,9 @@
             console.log('Recording started');
 
             // Notify background script
-            chrome.runtime.sendMessage({
+            browser.runtime.sendMessage({
                 action: 'recordingStarted',
-                tabId: chrome.devtools ? chrome.devtools.inspectedWindow.tabId : null,
+                tabId: browser.devtools ? browser.devtools.inspectedWindow.tabId : null,
                 enableEffects: enableEffects,
                 addTimestamp: addTimestamp
             });
@@ -78,7 +78,7 @@
             window.hasRecorderRun = false;
 
             // Notify background to clear any state (just in case)
-            chrome.runtime.sendMessage({ action: 'recordingStopped' });
+            browser.runtime.sendMessage({ action: 'recordingStopped' });
         }
     }
 
@@ -92,7 +92,7 @@
         window.hasRecorderRun = false;
 
         // Notify background script
-        chrome.runtime.sendMessage({
+        browser.runtime.sendMessage({
             action: 'recordingStopped'
         });
     }

@@ -134,7 +134,7 @@
     }
 
     // Listen for stop message from background
-    chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+    browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
         if (request.action === 'stopOverlay') {
             removeEffectOverlay();
         }

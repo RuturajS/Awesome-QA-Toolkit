@@ -5,7 +5,7 @@
     window.hasRun = true;
 
     // Listen for messages from the popup
-    chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+    browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
         if (request.action === "scan") {
             performScan().then(results => {
                 sendResponse({ results: results });
